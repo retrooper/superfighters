@@ -13,6 +13,9 @@ const leftFacingPlayer = "l"
 const rightPunchingPlayer = "r"
 const leftPunchingPlayer = "n"
 
+const npcFacingRight = "P"
+const npcFacingLeft = "L"
+
 const box = "b"
 const ladder = "c"
 const fireParticle = "f"
@@ -88,6 +91,40 @@ CC0002222200000.
 ......00.000....
 ......00..000...
 .....000...00...`],
+  [npcFacingRight, bitmap`
+....00000000....
+....05555550....
+....05555550....
+....05225220....
+000055555550....
+055555555550....
+055555555550000.
+055000055555550.
+055555055555550.
+055555055555550.
+000000055555550.
+......055500000.
+.....0555500....
+.....0555550....
+....05555550....
+...0055555500...`],
+  [npcFacingLeft, bitmap`
+....00000000....
+....05555550....
+....05555550....
+....022522500...
+....055555550...
+00000555555500..
+055505555555500.
+055555555005550.
+005555555055550.
+..0055555055500.
+...00555505000..
+....00555050....
+....0055550.....
+....0555550.....
+....05555550....
+...0055555500...`],
   [box, bitmap`
 ................
 .00000000000000.
@@ -154,7 +191,7 @@ const levels = [
 p..............
 .............cb
 .............c.
-.........bbb.c.`
+.......LPbbb.c.`
 ]
 
 setMap(levels[level])
@@ -166,6 +203,7 @@ setPushables({
 })
 
 let jumping = false
+
 function playerDistanceToGround(player) {
 
     let playerY = getFirst(player).y
@@ -289,7 +327,7 @@ onInput("w", () => {
       }
       clearInterval(intervalId)
       jumping = false
-    }, 100)
+    }, 200)
   }
 })
 
@@ -297,7 +335,7 @@ let lastLeftMovement = Date.now()
 let lastRightMovement = Date.now()
 
 
-const movementDelay = 220
+const movementDelay = 150
 
 onInput("a", () => {
   let currentTime = Date.now()
@@ -317,7 +355,7 @@ onInput("d", () => {
   let currentTime = Date.now()
   if ((currentTime - lastRightMovement) >= movementDelay) { 
     lastRightMovement = currentTime
-    if (getFirst(player).type != "p") {
+    if (getFirst(player).type != rightFacingPlayer) {
       getFirst(player).type = rightFacingPlayer
       player = rightFacingPlayer
     }
@@ -340,3 +378,37 @@ setInterval(() => {
     //getFirst(player).y += distanceToGround
   }
 }, 30)
+
+function npcShootBullet(let npc, let player) {
+  
+}
+
+afterInput(() => {
+    // Process NPCs
+  getAll().forEach(entity => {
+      if (entity.type != npcFacingLeft && entity.type != npcFacingRight)
+        return
+      let playerX = getFirst(player).x
+      let playerY = getFirst(player).y
+
+      let entityX = entity.x
+      let entityY = entity.y
+      //distance = sqrt(x^2 + y^2)
+      let xDelta = playerX - entityX
+      let yDelta = playerY - entityY
+      let distanceSq = xDelta * xDelta + yDelta * yDelta
+      let distance = Math.sqrt(distanceSq)
+
+      if (distance < 7) {
+          //Make the NPC face the player
+          if (xDelta <= 0) {
+              entity.type = npcFacingLeft
+          }
+          else {
+              entity.type = npcFacingRight
+          }
+          npcShootBullet(entity, player)
+      }
+  });
+    //console.log(allNpcs)
+})
