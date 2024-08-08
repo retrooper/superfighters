@@ -8,10 +8,14 @@ https://sprig.hackclub.com/gallery/getting_started
 @addedOn: 2024-00-00
 */
 
-const player = "p"
+const rightFacingPlayer = "p"
+const leftFacingPlayer = "l"
+const box = "b"
+
+let player = rightFacingPlayer
 
 setLegend(
-  [ player, bitmap`
+  [ rightFacingPlayer, bitmap`
 .....000000.....
 ....00CCCC00....
 ....00020020....
@@ -27,7 +31,41 @@ setLegend(
 ......000000....
 .....000...00...
 .....00....00...
-.....000...000..` ]
+.....000...000..` ],
+  [leftFacingPlayer, bitmap`
+.....000000.....
+....00CCCC00....
+....02002000....
+.....00C00C0....
+..0000CCCC0000..
+..000000000000..
+..000222220000..
+..000200200000..
+..0CC2000CC000..
+..0CC0000CC000..
+..00000000000...
+.....00000......
+....000000......
+...00...000.....
+...00....00.....
+..000...000.....`],
+  [box, bitmap`
+................
+.00000000000000.
+.0............0.
+.0.0000000000.0.
+.0.0666666060.0.
+.0.0666660600.0.
+.0.0666606060.0.
+.0.0666060660.0.
+.0.0660606660.0.
+.0.0606066660.0.
+.0.0060666660.0.
+.0.0606666660.0.
+.0.0000000000.0.
+.0............0.
+.00000000000000.
+................`]
 )
 
 setSolids([])
@@ -49,41 +87,82 @@ p..............
 setMap(levels[level])
 
 setPushables({
-  [ player ]: []
+  [ rightFacingPlayer ]: [],
+  [ leftFacingPlayer ]: []
 })
+
+let jumping = false
 
 onInput("w", () => {
   let playerY = getFirst(player).y
   let playerX = getFirst(player).x
   let distanceToGround = height() - Math.abs(playerY) - 1
-  if (distanceToGround === 0) {
-      getFirst(player).y -= 1
-      setTimeout()
+  let isOnGround = distanceToGround === 0  
+  if (!jumping && isOnGround) {
+    getFirst(player).y -= 1
+    jumping = true
+
+    var intervalId = setInterval(() => {
+      let lastPlayerY = getFirst(player).y
+
+      let playerY = getFirst(player).y
+      let playerX = getFirst(player).x
+      let distanceToGround = height() - Math.abs(playerY) - 1
+      let isOnGround = distanceToGround === 0
+      if (!isOnGround) {
+        // Push them up
+        getFirst(player).y = lastPlayerY
+      }
+      clearInterval(intervalId)
+      jumping = false
+    }, 300)
   }
 })
 
-onInput("s", () => {
-  //getFirst(player).y += 1
+let lastLeftMovement = Date.now()
+let lastRightMovement = Date.now()
+
+
+const movementDelay = 220
+
+onInput("a", () => {
+  let currentTime = Date.now()
+  if ((currentTime - lastLeftMovement) >= movementDelay) { 
+    lastLeftMovement = currentTime
+
+    if (getFirst(player).type != "l") {
+        getFirst(player).type = leftFacingPlayer
+        player = leftFacingPlayer
+    }
+    getFirst(player).x -= 1
+  }
 })
 
-setTimeout(() => {
-  
-}, 200)
+
+onInput("d", () => {
+  let currentTime = Date.now()
+  if ((currentTime - lastRightMovement) >= movementDelay) { 
+    lastRightMovement = currentTime
+    if (getFirst(player).type != "p") {
+      getFirst(player).type = rightFacingPlayer
+      player = rightFacingPlayer
+    }
+    getFirst(player).x += 1
+  }
+})
 
 setInterval(() => {
-  //getFirst(player).y += 1
-  let playerY = getFirst(player).y
-  let playerX = getFirst(player).x
-  let distanceToGround = height() - Math.abs(playerY) - 1
-  //TODO For combat
-  //getFirst(player).y -= distanceToGround
-  getFirst(player).y += distanceToGround
-}, 500)
+  if (!jumping) {
+    //getFirst(player).y += 1
+    let playerY = getFirst(player).y
+    let playerX = getFirst(player).x
+    let distanceToGround = height() - Math.abs(playerY) - 1
+    //TODO For combat
+    //getFirst(player).y -= distanceToGround
+    getFirst(player).y += distanceToGround
+  }
+}, 50)
 
 afterInput(() => {
-  interval = setInterval(() -> {
-    
-  }, 20)
-
-  
+  console.log("after input")
 })
