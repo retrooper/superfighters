@@ -52,23 +52,23 @@ setLegend(
   [box, bitmap`
 ................
 .00000000000000.
-.0............0.
-.0.0000000000.0.
-.0.0666666060.0.
-.0.0666660600.0.
-.0.0666606060.0.
-.0.0666060660.0.
-.0.0660606660.0.
-.0.0606066660.0.
-.0.0060666660.0.
-.0.0606666660.0.
-.0.0000000000.0.
-.0............0.
+.0HHHHHHHHHHHH0.
+.0H0000000000H0.
+.0H0999999090H0.
+.0H0999990900H0.
+.0H0999909090H0.
+.0H0999090990H0.
+.0H0990909990H0.
+.0H0909099990H0.
+.0H0090999990H0.
+.0H0909999990H0.
+.0H0000000000H0.
+.0HHHHHHHHHHHH0.
 .00000000000000.
 ................`]
 )
 
-setSolids([])
+setSolids([rightFacingPlayer, leftFacingPlayer, box])
 
 let level = 0
 const levels = [
@@ -80,25 +80,72 @@ const levels = [
 ...............
 p..............
 ...............
-...............
-...............`
+.............b.
+............bb.`
 ]
 
 setMap(levels[level])
 
 setPushables({
   [ rightFacingPlayer ]: [],
-  [ leftFacingPlayer ]: []
+  [ leftFacingPlayer ]: [],
+  [box]: []
 })
 
 let jumping = false
 
+
+/*
+function playerDistanceToGround(player) {
+  let playerY = getFirst(player).y
+  let playerX = getFirst(player).x
+  let distanceToGround = 0
+  for (let i = playerY + 1; i >= 0; i--) {
+    tiles = getTile(playerX, i)
+    if (tiles.length != 0) {
+      for (let tile in tiles) {
+         if (tile.type != "p" && 
+            tile.type != "l") {
+           console.log("dist: " + (height() - i - 1))
+          return height() - i - 1
+        }
+      }
+    }
+  }
+  return height() - playerY - 1
+}*/
+
+function playerDistanceToGround(player) {
+
+    let playerY = getFirst(player).y
+    let playerX = getFirst(player).x
+    let distanceToGround = 0
+
+    // Check tiles below the player
+    for (let i = playerY + 1; i < height(); i++) {
+        const tiles = getTile(playerX, i)
+        if (tiles.length != 0) {
+           for (let tile in tiles) {
+             if (tile.type != "p" && 
+              tile.type != "l") 
+               return distanceToGround = i - playerY - 1
+             }
+          }
+        }
+
+    return height() - playerY - 1
+}
+
+function playerIsOnGround(player) {
+    return playerDistanceToGround(player) == 0
+}
+
 onInput("w", () => {
   let playerY = getFirst(player).y
   let playerX = getFirst(player).x
-  let distanceToGround = height() - Math.abs(playerY) - 1
-  let isOnGround = distanceToGround === 0  
-  if (!jumping && isOnGround) {
+  let distanceToGround = playerDistanceToGround(player)
+  let onGround = playerIsOnGround(player)
+  if (!jumping && onGround) {
     getFirst(player).y -= 1
     jumping = true
 
@@ -107,9 +154,9 @@ onInput("w", () => {
 
       let playerY = getFirst(player).y
       let playerX = getFirst(player).x
-      let distanceToGround = height() - Math.abs(playerY) - 1
-      let isOnGround = distanceToGround === 0
-      if (!isOnGround) {
+      let distanceToGround = playerDistanceToGround(player)
+      let onGround = playerIsOnGround(player)
+      if (!onGround) {
         // Push them up
         getFirst(player).y = lastPlayerY
       }
@@ -156,7 +203,7 @@ setInterval(() => {
     //getFirst(player).y += 1
     let playerY = getFirst(player).y
     let playerX = getFirst(player).x
-    let distanceToGround = height() - Math.abs(playerY) - 1
+    let distanceToGround = playerDistanceToGround(player)
     //TODO For combat
     //getFirst(player).y -= distanceToGround
     getFirst(player).y += distanceToGround
@@ -164,5 +211,4 @@ setInterval(() => {
 }, 50)
 
 afterInput(() => {
-  console.log("after input")
 })
