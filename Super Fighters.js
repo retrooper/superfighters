@@ -19,6 +19,7 @@ const npcFacingLeft = "L"
 const box = "b"
 const ladder = "c"
 const fireParticle = "f"
+const bullet = "m"
 
 let player = rightFacingPlayer
 
@@ -175,7 +176,24 @@ CC0002222200000.
 .6..9999999.....
 ..6...9969......
 ...6....9.......
-......6.........`]
+......6.........`],
+  [bullet, bitmap`
+................
+................
+................
+................
+................
+................
+................
+......96F6......
+......F666......
+................
+................
+................
+................
+................
+................
+................`]
 )
 
 setSolids([rightFacingPlayer, leftFacingPlayer, box])
@@ -189,9 +207,9 @@ const levels = [
 ...............
 ...............
 p..............
-.............cb
-.............c.
-.......LPbbb.c.`
+..b..........cb
+..b..........cb
+..b....LP....cb`
 ]
 
 setMap(levels[level])
@@ -267,6 +285,21 @@ onInput("l", () => {
 
 })
 
+function spawnParticle(particleX, particleY) {
+
+  //Add particle
+          addSprite(particleX, particleY, fireParticle)
+          var tempInterval = setInterval(() => {
+            //Destroy particle later
+            getTile(particleX, particleY).forEach(sprite => {
+              if (sprite.type == fireParticle) {
+                sprite.remove()
+              }
+            });
+            clearInterval(tempInterval)
+          }, 100);
+}
+
 onInput("j", () => {
   let particleX = getFirst(player).x - 1
   let particleY = getFirst(player).y
@@ -279,17 +312,8 @@ onInput("j", () => {
         if (tile.type != rightFacingPlayer && tile.type != leftFacingPlayer) {
           //Destroy block next to them
           clearTile(particleX, particleY)
-          //Add particle
-          addSprite(particleX, particleY, fireParticle)
-          var tempInterval = setInterval(() => {
-            //Destroy particle later
-            getTile(particleX, particleY).forEach(sprite => {
-              if (sprite.type == fireParticle) {
-                sprite.remove()
-              }
-            });
-            clearInterval(tempInterval)
-          }, 100);
+
+          spawnParticle(particleX, particleY)
           break
         }
       }
@@ -327,7 +351,7 @@ onInput("w", () => {
       }
       clearInterval(intervalId)
       jumping = false
-    }, 200)
+    }, 300)
   }
 })
 
@@ -365,27 +389,19 @@ onInput("d", () => {
 
 setInterval(() => {
   if (!jumping) {
-    //getFirst(player).y += 1
+    // Player Gravity
     let playerY = getFirst(player).y
     let playerX = getFirst(player).x
     let onGround = playerIsOnGround(player)
     if (!onGround) {
       getFirst(player).y += 1
     }
-    //let distanceToGround = playerDistanceToGround(player)
-    //TODO For combat
-    //getFirst(player).y -= distanceToGround
-    //getFirst(player).y += distanceToGround
   }
 }, 30)
 
-function npcShootBullet(let npc, let player) {
-  
-}
-
-afterInput(() => {
-    // Process NPCs
-  getAll().forEach(entity => {
+setInterval(() =>{
+    // Process entity proximity detection
+     getAll().forEach(entity => {
       if (entity.type != npcFacingLeft && entity.type != npcFacingRight)
         return
       let playerX = getFirst(player).x
@@ -400,15 +416,77 @@ afterInput(() => {
       let distance = Math.sqrt(distanceSq)
 
       if (distance < 7) {
-          //Make the NPC face the player
-          if (xDelta <= 0) {
-              entity.type = npcFacingLeft
+          let right = xDelta > 0
+          if (right) {
+            //Face shooter right or left
+            entity.type = npcFacingRight
           }
           else {
-              entity.type = npcFacingRight
+            entity.type = npcFacingLeft
           }
-          npcShootBullet(entity, player)
+          shootBullet(entity, entity.x, entity.y)
       }
   });
+  
+  // Process bullets
+  getAll().forEach(entity=>{
+        if (entity.type == bullet) {
+          let xDiff = getFirst(player).x - entity.x
+          let removedEntity = false
+          getTile(entity.x, entity.y).forEach(obstacle=>{
+            // TODO is obstacle method
+            console.log("tile: " + obstacle.type)
+            if (obstacle.type != "m" && obstacle.type != "L" && 
+                obstacle.type != "P") {
+              entity.remove()
+              removedEntity = true
+              spawnParticle(entity.x, entity.y)
+              return
+            }
+          })
+          if (removedEntity) return
+          entity.x += xDiff > 0 ? 1 : -1
+
+          if (entity.x == (width() - 1)
+              || entity.x == 0) {
+              var interval = setInterval(() =>{
+                  spawnParticle(entity.x, entity.y)
+                  entity.remove()
+                clearInterval(interval)
+              }, 200)
+          }
+        }
+    })
+}, 300)
+
+function distance(player, entityX, entityY) {
+  let playerX = player.x
+  let playerY = player.y
+
+      //distance = sqrt(x^2 + y^2)
+  let xDelta = playerX - entityX
+  let yDelta = playerY - entityY
+  let distanceSq = xDelta * xDelta + yDelta * yDelta
+  return Math.sqrt(distanceSq)
+}
+
+let lastShot = Date.now()
+
+function shootBullet(shooter, originX, originY) {
+  let currentTime = Date.now()
+  if (currentTime - lastShot > 1000) {
+    lastShot = currentTime
+    if (shooter.type == npcFacingLeft ||
+        shooter.type == leftFacingPlayer) {
+        addSprite(originX, originY, bullet)
+    }
+    else if (shooter.type == npcFacingRight ||
+             shooter.type == rightFacingPlayer) {
+      addSprite(originX, originY, bullet)
+    }
+  }
+}
+
+afterInput(() => {
     //console.log(allNpcs)
 })
