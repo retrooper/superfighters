@@ -17,11 +17,63 @@ const npcFacingRight = "P"
 const npcFacingLeft = "L"
 
 const box = "b"
+const bedrock = "B"
 const ladder = "c"
 const fireParticle = "f"
 const bullet = "m"
 
 let player = rightFacingPlayer
+
+let explosionSound = tune`
+500: A5^500,
+15500`
+
+let victoryMusic = tune`
+333.3333333333333: G5~333.3333333333333,
+333.3333333333333: B5~333.3333333333333,
+333.3333333333333: G5~333.3333333333333,
+666.6666666666666,
+333.3333333333333: D5~333.3333333333333,
+333.3333333333333: F5~333.3333333333333,
+333.3333333333333: D5~333.3333333333333,
+666.6666666666666,
+333.3333333333333: G5~333.3333333333333,
+333.3333333333333: B5~333.3333333333333,
+333.3333333333333: G5~333.3333333333333,
+666.6666666666666,
+333.3333333333333: D5~333.3333333333333,
+333.3333333333333: F5~333.3333333333333,
+333.3333333333333: D5~333.3333333333333,
+666.6666666666666,
+333.3333333333333: G5~333.3333333333333,
+333.3333333333333: B5~333.3333333333333,
+333.3333333333333: G5~333.3333333333333,
+666.6666666666666,
+333.3333333333333: D5~333.3333333333333,
+333.3333333333333: F5~333.3333333333333,
+333.3333333333333: D5~333.3333333333333,
+1333.3333333333333` 
+
+let gameMusic = tune`
+258.62068965517244: G4~258.62068965517244,
+258.62068965517244: B4~258.62068965517244,
+258.62068965517244: D5~258.62068965517244,
+1293.1034482758623,
+258.62068965517244: D5~258.62068965517244,
+258.62068965517244: E5~258.62068965517244,
+258.62068965517244: G5~258.62068965517244,
+1293.1034482758623,
+258.62068965517244: G4~258.62068965517244,
+258.62068965517244: B4~258.62068965517244,
+258.62068965517244: D5~258.62068965517244,
+1293.1034482758623,
+258.62068965517244: D5^258.62068965517244,
+258.62068965517244: E5^258.62068965517244,
+258.62068965517244: G5^258.62068965517244,
+258.62068965517244: D5~258.62068965517244,
+1034.4827586206898`
+
+const playback = playTune(gameMusic, Infinity)
 
 setLegend(
   [ rightFacingPlayer, bitmap`
@@ -127,39 +179,56 @@ CC0002222200000.
 ....05555550....
 ...0055555500...`],
   [box, bitmap`
-................
-.00000000000000.
-.0HHHHHHHHHHHH0.
-.0H0000000000H0.
-.0H0999999090H0.
-.0H0999990900H0.
-.0H0999909090H0.
-.0H0999090990H0.
-.0H0990909990H0.
-.0H0909099990H0.
-.0H0090999990H0.
-.0H0909999990H0.
-.0H0000000000H0.
-.0HHHHHHHHHHHH0.
-.00000000000000.
-................`],
+0000000000000000
+0..............0
+0.HHHHHHHHHHHH.0
+0.H0000000000H.0
+0.H0999999090H.0
+0.H0999990900H.0
+0.H0999909090H.0
+0.H0999090990H.0
+0.H0990909990H.0
+0.H0909099990H.0
+0.H0090999990H.0
+0.H0909999990H.0
+0.H0000000000H.0
+0.HHHHHHHHHHHH.0
+0..............0
+0000000000000000`],
+  [bedrock, bitmap`
+0000LLLL00LLL000
+000LL000LLLLL100
+0LLLLLLLLLLLL110
+LLLLLLLLLLLLLL0L
+LL00LLLLL00LL0LL
+L0LLLLLLLLL00LLL
+LLLLLLLLLLL0LLLL
+LLLLLLLLLL0LLLLL
+LLLLL0LLL0LLL0LL
+LLL00LLL0LLLL0LL
+LL0LLLLLLLLL0LLL
+00LLLLLLLLLLLLLL
+0LLLLLLL000LLLLL
+LLLLL000LLLLLLLL
+00LLLLLLLLLLLLL0
+000LLLLLLLLLL000`],
     [ladder, bitmap`
-...L........L...
-...L........L...
-...L........L...
-...LLLLLLLLLL...
-...L11111111L...
-...L........L...
-...L........L...
-...L........L...
-...LLLLLLLLLL...
-...L11111111L...
-...L........L...
-...L........L...
-...L........L...
-...LLLLLLLLLL...
-...L11111111L...
-...L........L...`],
+.LLLL......LLLL.
+.LLLL222LLLLLLL.
+.LLLLLLLLLLLL2L.
+.L1LL......LL2L.
+.L1LL......LL2L.
+.L1LLLLLLLLLLLL.
+.LLLLLLLLLLLLLL.
+.LLLL......LLLL.
+.LLLL......L2LL.
+.LLLLLLLLLLL2LL.
+.LLLLLLLLLLL2LL.
+.LLLL......L2LL.
+.LLLL......LLLL.
+.LL2LLLLLLLLLLL.
+.LL2LLLLLLLLLLL.
+.LL2L......LLLL.`],
   [fireParticle, bitmap`
 ..9....99....9..
 ....999999......
@@ -196,7 +265,7 @@ CC0002222200000.
 ................`]
 )
 
-setSolids([rightFacingPlayer, leftFacingPlayer, box])
+setSolids([rightFacingPlayer, leftFacingPlayer, box, bedrock])
 
 let level = 0
 const levels = [
@@ -209,7 +278,97 @@ const levels = [
 p..............
 ..b..........cb
 ..b..........cb
-..b....LP....cb`
+..b....LP....cb`,
+  map`
+...............
+...............
+...............
+...............
+...............
+...............
+.............cB
+.............cB
+p......LP..b.cB`,
+  map`
+...............
+...............
+...............
+...............
+...............
+..............B
+.........b...BB
+.......b...bbBB
+p.bbbbbbb....BB`,
+  map`
+...............
+...............
+...............
+...............
+...............
+.............P.
+.............b.
+............bB.
+p......LL..b.B.`,
+  map`
+...............
+...............
+...............
+...............
+...............
+.............P.
+.............b.
+p...........bB.
+bbbbbbbbbbbbbbb`,
+  map`
+p..............
+bbbbbbbbbbbb.bb
+bbbbbbbbbbbb.bb
+bbbbbbbbbbbb.bb
+bbbbbbbbbbbb.bb
+bbbbbbbbbbbb.bb
+bbbbbbbbbbbb...
+bbbbbbbbbbbbbbb
+BBBBBBBBBBBBBBB`,
+  map`
+............b..
+bbbbbbbbbbbbbbb
+bbbbbbbbbbbbbbb
+bbbbbbbbbbbbbbb
+bbbbbbbbbbbbbbb
+bbbbbbbbbbb....
+p...........bbb
+bbbbbbbbbbbbbbb
+BBBBBBBBBBBBBBB`,
+  map`
+bbbbbbbbbbbbbbb
+bbbbbbbbbbbb.bb
+p...BP.........
+BBB.Bbbb..bb.bb
+bbB.b....Bbb.bb
+bbB...BBBBbbbbb
+bbBBBBbbbbbbbbb
+bbbbbbbbbbbbbbb
+BBBBBBBBBBBBBBB`,
+  map`
+p..............
+bbbbbbbbbbbb.bb
+bbbbbbbbbbbb.bb
+bbbbbbbbbbbb.bb
+bbbbbbbbbbbb.bb
+bbbbbbbbbbbbbbb
+bbbbbbbbbbbbbbb
+bbbbbbbbbbbbbbb
+BBBBBBBBBBBBBBB`,
+  map`
+...............
+...............
+...............
+...............
+...............
+...............
+...............
+...............
+p..............`
 ]
 
 setMap(levels[level])
@@ -223,7 +382,6 @@ setPushables({
 let jumping = false
 
 function playerDistanceToGround(player) {
-
     let playerY = getFirst(player).y
     let playerX = getFirst(player).x
     let distanceToGround = 0
@@ -247,7 +405,13 @@ function playerIsOnGround(player) {
     return playerDistanceToGround(player) == 0
 }
 
+function attackInSameSpace(player) {
+  
+}
+
 onInput("l", () => {
+   // Handle close proximity attacks
+  
   let particleX = getFirst(player).x + 1
   let particleY = getFirst(player).y
   if (getFirst(player).type == rightFacingPlayer) {
@@ -255,25 +419,22 @@ onInput("l", () => {
         player = rightPunchingPlayer
       //Check sprite next to the player
       let neighboringTiles = getTile(particleX, particleY)
-      for (let tile in neighboringTiles) {
-        if (tile.type != rightFacingPlayer && tile.type != leftFacingPlayer) {
-          //Destroy block next to them
-          clearTile(particleX, particleY)
-          //Add particle
-          addSprite(particleX, particleY, fireParticle)
-          var tempInterval = setInterval(() => {
-            //Destroy particle later
-            getTile(particleX, particleY).forEach(sprite => {
-              if (sprite.type == fireParticle) {
-                sprite.remove()
-              }
-            });
-            clearInterval(tempInterval)
-          }, 100);
-          break
+    neighboringTiles.forEach(tile=>{
+       if (tile.type != rightFacingPlayer && tile.type != leftFacingPlayer) {
+          //If it bedrock, we cnanot break it!
+          if (tile.type == "B") {
+            spawnParticle(particleX, particleY)
+            addSprite(particleX, particleY, bedrock)
+          }
+          else {
+            //Destroy block next to them
+            clearTile(particleX, particleY)
+            spawnParticle(particleX, particleY)
+          }
+
+         return
         }
-      }
-      
+    })
   }
   var intervalId = setInterval(() => {
     if (getFirst(player).type == rightPunchingPlayer) {
@@ -285,10 +446,17 @@ onInput("l", () => {
 
 })
 
-function spawnParticle(particleX, particleY) {
+lastExplosionSound = Date.now()
 
-  //Add particle
-          addSprite(particleX, particleY, fireParticle)
+function spawnParticle(particleX, particleY) {
+    // Explosion sound  
+    let currentTime = Date.now()
+    if (currentTime - lastExplosionSound > 100) {
+      lastExplosionSound = currentTime
+      playTune(explosionSound)
+      //Add particle
+          
+      addSprite(particleX, particleY, fireParticle)
           var tempInterval = setInterval(() => {
             //Destroy particle later
             getTile(particleX, particleY).forEach(sprite => {
@@ -298,6 +466,7 @@ function spawnParticle(particleX, particleY) {
             });
             clearInterval(tempInterval)
           }, 100);
+    }
 }
 
 onInput("j", () => {
@@ -307,18 +476,23 @@ onInput("j", () => {
         getFirst(player).type = leftPunchingPlayer
         player = leftPunchingPlayer
       //Check sprite next to the player
-      let neighboringTiles = getTile(particleX, particleY)
-      for (let tile in neighboringTiles) {
-        if (tile.type != rightFacingPlayer && tile.type != leftFacingPlayer) {
-          //Destroy block next to them
-          clearTile(particleX, particleY)
-
-          spawnParticle(particleX, particleY)
-          break
+       let neighboringTiles = getTile(particleX, particleY)
+        neighboringTiles.forEach(tile=>{
+       if (tile.type != rightFacingPlayer && tile.type != leftFacingPlayer) {
+          //If it bedrock, we cnanot break it!
+          if (tile.type == "B") {
+            spawnParticle(particleX, particleY)
+            addSprite(particleX, particleY, bedrock)
+          }
+          else {
+            //Destroy block next to them
+            clearTile(particleX, particleY)
+            spawnParticle(particleX, particleY)
+          }
+         return
         }
+      })
       }
-      
-  }
   var intervalId = setInterval(() => {
     if (getFirst(player).type == leftPunchingPlayer) {
       getFirst(player).type = leftFacingPlayer
@@ -435,7 +609,6 @@ setInterval(() =>{
           let removedEntity = false
           getTile(entity.x, entity.y).forEach(obstacle=>{
             // TODO is obstacle method
-            console.log("tile: " + obstacle.type)
             if (obstacle.type != "m" && obstacle.type != "L" && 
                 obstacle.type != "P") {
               entity.remove()
@@ -445,6 +618,7 @@ setInterval(() =>{
             }
           })
           if (removedEntity) return
+          let yDiff = getFirst(player).y - entity.y
           entity.x += xDiff > 0 ? 1 : -1
 
           if (entity.x == (width() - 1)
@@ -457,7 +631,74 @@ setInterval(() =>{
           }
         }
     })
+
 }, 300)
+
+let changingLevels = false
+setInterval(() =>{
+  //Changing levels
+  if (getFirst(player).x == width() - 1) {
+    if (!levels[level + 1]) return
+    changingLevels = true
+    clearText()
+      addText("Loading new level...", {y: 4, color:`4`})
+      getAll().forEach(entity=>{
+        if (entity.type!="m" && entity.type!= "f") {
+            if (entity.x != 0) {
+              entity.x--
+              getFirst(player).x++
+            }
+            if (entity.x == 0) {
+              entity.remove()
+            }
+        }
+      })
+
+    }
+
+  if (changingLevels && getAll().length == 1 && level < (levels.length - 1)) {
+    //Done changing levels
+    level++
+    setMap(levels[level])
+    changingLevels = false
+
+    if (level == levels.length - 1) {
+      playback.end()
+      playTune(victoryMusic, Infinity)
+    }
+
+    //addText("You win the game!", {y: 3, color`3`})
+  }
+
+  if (!changingLevels) {
+    clearText()
+  }
+  if (changingLevels) return
+  switch (level) {
+    case 0:
+      addText("Super Fighters v1", {y: 3, color: `5`})
+      break
+
+    case 1:
+      addText("Not bad...", {y: 3, color: `4`})
+      addText("Can you beat this?", {y: 4, color: `3`})
+      break
+    case 2:
+      addText("It gets harder...", {y:4, color: `3`})
+      break
+    case 5:
+      addText("Go down", {y:2, color:`3`})
+      break
+    case 6:
+      addText("What is next?...", {y:2, color: `5`})
+      break
+  }
+
+  if (level == levels.length - 1) {
+      addText("You win!", {y: 3, color:`4`})
+  }
+  
+}, 40)
 
 function distance(player, entityX, entityY) {
   let playerX = player.x
