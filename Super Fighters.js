@@ -10,7 +10,12 @@ https://sprig.hackclub.com/gallery/getting_started
 
 const rightFacingPlayer = "p"
 const leftFacingPlayer = "l"
+const rightPunchingPlayer = "r"
+const leftPunchingPlayer = "n"
+
 const box = "b"
+const ladder = "c"
+const fireParticle = "f"
 
 let player = rightFacingPlayer
 
@@ -34,21 +39,55 @@ setLegend(
 .....000...000..` ],
   [leftFacingPlayer, bitmap`
 .....000000.....
-....00CCCC00....
-....02002000....
+.....0CCCC00....
+.....2002000....
 .....00C00C0....
 ..0000CCCC0000..
 ..000000000000..
 ..000222220000..
 ..000200200000..
-..0CC2000CC000..
-..0CC0000CC000..
-..00000000000...
+..000200000000..
+..000000000000..
+..CCC000000CCC..
 .....00000......
 ....000000......
 ...00...000.....
 ...00....00.....
 ..000...000.....`],
+  [rightPunchingPlayer, bitmap`
+.....000000.....
+....00CCCC00....
+....00030030....
+....0C00C00.....
+..000CCCCC00000.
+..00000000000000
+..00002222200CCC
+..0000020000.CCC
+..0CC0000000....
+..0CC0000000....
+..000000000.....
+.....000000.....
+.....0000000....
+.....00...00....
+.....00...00....
+.....000..000...`],
+  [leftPunchingPlayer, bitmap`
+.....000000.....
+.....0CCCC00....
+.....3003000....
+.....00C00C0....
+CC0000CCCCC0....
+CC000000000000..
+CC0002222200000.
+.....0002000000.
+.....0000000CC0.
+.....0000000CC0.
+.....000000.00..
+.....000000.....
+.....000000.....
+......00.000....
+......00..000...
+.....000...00...`],
   [box, bitmap`
 ................
 .00000000000000.
@@ -65,7 +104,41 @@ setLegend(
 .0H0000000000H0.
 .0HHHHHHHHHHHH0.
 .00000000000000.
-................`]
+................`],
+    [ladder, bitmap`
+...L........L...
+...L........L...
+...L........L...
+...LLLLLLLLLL...
+...L11111111L...
+...L........L...
+...L........L...
+...L........L...
+...LLLLLLLLLL...
+...L11111111L...
+...L........L...
+...L........L...
+...L........L...
+...LLLLLLLLLL...
+...L11111111L...
+...L........L...`],
+  [fireParticle, bitmap`
+..9....99....9..
+....999999......
+...99966699.....
+..9966626699....
+..9662266669....
+..9996662669....
+.996696662699...
+.996269662669.99
+..96622966699..9
+..9666669969....
+..99966666999...
+...999966699....
+.6..9999999.....
+..6...9969......
+...6....9.......
+......6.........`]
 )
 
 setSolids([rightFacingPlayer, leftFacingPlayer, box])
@@ -79,9 +152,9 @@ const levels = [
 ...............
 ...............
 p..............
-...............
-.............b.
-............bb.`
+.............cb
+.............c.
+.........bbb.c.`
 ]
 
 setMap(levels[level])
@@ -93,28 +166,6 @@ setPushables({
 })
 
 let jumping = false
-
-
-/*
-function playerDistanceToGround(player) {
-  let playerY = getFirst(player).y
-  let playerX = getFirst(player).x
-  let distanceToGround = 0
-  for (let i = playerY + 1; i >= 0; i--) {
-    tiles = getTile(playerX, i)
-    if (tiles.length != 0) {
-      for (let tile in tiles) {
-         if (tile.type != "p" && 
-            tile.type != "l") {
-           console.log("dist: " + (height() - i - 1))
-          return height() - i - 1
-        }
-      }
-    }
-  }
-  return height() - playerY - 1
-}*/
-
 function playerDistanceToGround(player) {
 
     let playerY = getFirst(player).y
@@ -126,8 +177,8 @@ function playerDistanceToGround(player) {
         const tiles = getTile(playerX, i)
         if (tiles.length != 0) {
            for (let tile in tiles) {
-             if (tile.type != "p" && 
-              tile.type != "l") 
+             if (tile.type != leftFacingPlayer && 
+              tile.type != rightFacingPlayer) 
                return distanceToGround = i - playerY - 1
              }
           }
@@ -139,6 +190,82 @@ function playerDistanceToGround(player) {
 function playerIsOnGround(player) {
     return playerDistanceToGround(player) == 0
 }
+
+onInput("l", () => {
+  let particleX = getFirst(player).x + 1
+  let particleY = getFirst(player).y
+  if (getFirst(player).type == rightFacingPlayer) {
+        getFirst(player).type = rightPunchingPlayer
+        player = rightPunchingPlayer
+      //Check sprite next to the player
+      let neighboringTiles = getTile(particleX, particleY)
+      for (let tile in neighboringTiles) {
+        if (tile.type != rightFacingPlayer && tile.type != leftFacingPlayer) {
+          //Destroy block next to them
+          clearTile(particleX, particleY)
+          //Add particle
+          addSprite(particleX, particleY, fireParticle)
+          var tempInterval = setInterval(() => {
+            //Destroy particle later
+            getTile(particleX, particleY).forEach(sprite => {
+              if (sprite.type == fireParticle) {
+                sprite.remove()
+              }
+            });
+            clearInterval(tempInterval)
+          }, 100);
+          break
+        }
+      }
+      
+  }
+  var intervalId = setInterval(() => {
+    if (getFirst(player).type == rightPunchingPlayer) {
+      getFirst(player).type = rightFacingPlayer
+      player = rightFacingPlayer
+    }
+    clearInterval(intervalId)
+  }, 200)
+
+})
+
+onInput("j", () => {
+  let particleX = getFirst(player).x - 1
+  let particleY = getFirst(player).y
+  if (getFirst(player).type == leftFacingPlayer) {
+        getFirst(player).type = leftPunchingPlayer
+        player = leftPunchingPlayer
+      //Check sprite next to the player
+      let neighboringTiles = getTile(particleX, particleY)
+      for (let tile in neighboringTiles) {
+        if (tile.type != rightFacingPlayer && tile.type != leftFacingPlayer) {
+          //Destroy block next to them
+          clearTile(particleX, particleY)
+          //Add particle
+          addSprite(particleX, particleY, fireParticle)
+          var tempInterval = setInterval(() => {
+            //Destroy particle later
+            getTile(particleX, particleY).forEach(sprite => {
+              if (sprite.type == fireParticle) {
+                sprite.remove()
+              }
+            });
+            clearInterval(tempInterval)
+          }, 100);
+          break
+        }
+      }
+      
+  }
+  var intervalId = setInterval(() => {
+    if (getFirst(player).type == leftPunchingPlayer) {
+      getFirst(player).type = leftFacingPlayer
+      player = leftFacingPlayer
+    }
+    clearInterval(intervalId)
+  }, 200)
+
+})
 
 onInput("w", () => {
   let playerY = getFirst(player).y
@@ -162,7 +289,7 @@ onInput("w", () => {
       }
       clearInterval(intervalId)
       jumping = false
-    }, 300)
+    }, 100)
   }
 })
 
@@ -203,12 +330,13 @@ setInterval(() => {
     //getFirst(player).y += 1
     let playerY = getFirst(player).y
     let playerX = getFirst(player).x
-    let distanceToGround = playerDistanceToGround(player)
+    let onGround = playerIsOnGround(player)
+    if (!onGround) {
+      getFirst(player).y += 1
+    }
+    //let distanceToGround = playerDistanceToGround(player)
     //TODO For combat
     //getFirst(player).y -= distanceToGround
-    getFirst(player).y += distanceToGround
+    //getFirst(player).y += distanceToGround
   }
-}, 50)
-
-afterInput(() => {
-})
+}, 30)
