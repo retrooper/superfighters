@@ -647,7 +647,7 @@ function spawnParticle(particleX, particleY, type) {
 
 // Handle right punch
 onInput("l", () => {
-  if (!player) return;
+  if (!player || !getFirst(player)) return;
   let particleX = getFirst(player).x + 1;
   let particleY = getFirst(player).y;
   // Are they facing in the right direction (so they can attack in that direction)
@@ -668,7 +668,7 @@ onInput("l", () => {
 
 // Handle left punch
 onInput("j", () => {
-  if (!player) return;
+  if (!player || !getFirst(player)) return;
   let particleX = getFirst(player).x - 1;
   let particleY = getFirst(player).y;
   // Are they facing in the left direction? (to be able to punch left)
@@ -689,7 +689,7 @@ onInput("j", () => {
 
 // Jump functionality
 onInput("w", () => {
-  if (!player) return;
+  if (!player || !getFirst(player)) return;
 
   // Is the player on ground (and not jumping)
   let onGround = isOnGround(getFirst(player));
@@ -714,7 +714,8 @@ onInput("w", () => {
 
 // Handle left directional movement
 onInput("a", () => {
-  if (!player) return;
+  if (!player || !getFirst(player)) return;
+
   let currentTime = Date.now();
   if (currentTime - lastLeftMovement >= movementDelay) {
     lastLeftMovement = currentTime;
@@ -730,7 +731,8 @@ onInput("a", () => {
 
 // Handle right directional movement
 onInput("d", () => {
-  if (!player) return;
+  if (!player || !getFirst(player)) return;
+
   let currentTime = Date.now();
   if (currentTime - lastRightMovement >= movementDelay) {
     lastRightMovement = currentTime;
@@ -761,7 +763,8 @@ setInterval(() => {
 
 // Moving entity handler
 setInterval(() => {
-  if (!player) return;
+  if (!player || !getFirst(player)) return;
+
   // Process entity proximity detection (NPC player tracing logic)
   getAll().forEach((entity) => {
     // Loop over all NPCs
@@ -825,7 +828,8 @@ setInterval(() => {
 
 // Level changing handler, Player death handler, Lives rendering handler
 setInterval(() => {
-  if (!player) return;
+  if (!player || !getFirst(player)) return;
+
   // Changing levels functionality (if they reach the edge)
   if (getFirst(player).x == width() - 1) {
     if (!levels[level + 1]) return;
@@ -883,7 +887,7 @@ setInterval(() => {
       case 6:
         addText("What is next?...", { y: 2, color: `5` });
         break;
-    }
+    } 
 
     if (level == levels.length - 1) {
       addText("You win!", { y: 3, color: `4` });
