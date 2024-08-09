@@ -413,6 +413,21 @@ setPushables({
   [box]: []
 })
 
+
+function isEntity(type) {
+  return isNPC(type) || isPlayer(type)
+}
+
+
+function isNPC(type) {
+  return type == npcFacingLeft || type == npcFacingRight
+}
+
+function isPlayer(type) {
+  return type == leftFacingPlayer || type == rightFacingPlayer ||
+  type == leftPunchingPlayer || type == rightPunchingPlayer
+}
+
 let jumping = false
 
 function playerDistanceToGround(player) {
@@ -445,7 +460,7 @@ function attackInSameSpace(player) {
 
 onInput("l", () => {
    // Handle close proximity attacks
-  
+  if (!player) return
   let particleX = getFirst(player).x + 1
   let particleY = getFirst(player).y
   if (getFirst(player).type == rightFacingPlayer) {
@@ -456,7 +471,7 @@ onInput("l", () => {
     neighboringTiles.forEach(tile=>{
        if (tile.type != rightFacingPlayer && tile.type != leftFacingPlayer) {
           //If it bedrock, we cnanot break it!
-          if (tile.type == "B") {
+          if (tile.type == bedrock) {
             spawnParticle(particleX, particleY, 0)
             addSprite(particleX, particleY, bedrock)
           }
@@ -471,7 +486,7 @@ onInput("l", () => {
     })
   }
   var intervalId = setInterval(() => {
-    if (getFirst(player).type == rightPunchingPlayer) {
+    if (player && getFirst(player).type == rightPunchingPlayer) {
       getFirst(player).type = rightFacingPlayer
       player = rightFacingPlayer
     }
@@ -521,6 +536,7 @@ function spawnParticle(particleX, particleY, type) {
 }
 
 onInput("j", () => {
+  if (!player) return
   let particleX = getFirst(player).x - 1
   let particleY = getFirst(player).y
   if (getFirst(player).type == leftFacingPlayer) {
@@ -531,7 +547,7 @@ onInput("j", () => {
         neighboringTiles.forEach(tile=>{
        if (tile.type != rightFacingPlayer && tile.type != leftFacingPlayer) {
           //If it bedrock, we cnanot break it!
-          if (tile.type == "B") {
+          if (tile.type == bedrock) {
             spawnParticle(particleX, particleY, 0)
             addSprite(particleX, particleY, bedrock)
           }
@@ -555,6 +571,7 @@ onInput("j", () => {
 })
 
 onInput("w", () => {
+  if (!player) return
   let playerY = getFirst(player).y
   let playerX = getFirst(player).x
   let distanceToGround = playerDistanceToGround(getFirst(player))
@@ -591,7 +608,7 @@ onInput("a", () => {
   if ((currentTime - lastLeftMovement) >= movementDelay) { 
     lastLeftMovement = currentTime
 
-    if (getFirst(player).type != "l") {
+    if (player && getFirst(player).type != "l") {
         getFirst(player).type = leftFacingPlayer
         player = leftFacingPlayer
     }
@@ -604,7 +621,7 @@ onInput("d", () => {
   let currentTime = Date.now()
   if ((currentTime - lastRightMovement) >= movementDelay) { 
     lastRightMovement = currentTime
-    if (getFirst(player).type != rightFacingPlayer) {
+    if (player && getFirst(player).type != rightFacingPlayer) {
       getFirst(player).type = rightFacingPlayer
       player = rightFacingPlayer
     }
@@ -633,8 +650,10 @@ setInterval(() => {
 setInterval(() =>{
     // Process entity proximity detection
      getAll().forEach(entity => {
-      if (entity.type != npcFacingLeft && entity.type != npcFacingRight)
-        return
+      // Loop over all NPCs
+      if (!isNPC(entity.type)) return
+
+       
       let playerX = getFirst(player).x
       let playerY = getFirst(player).y
 
@@ -646,7 +665,8 @@ setInterval(() =>{
       let distanceSq = xDelta * xDelta + yDelta * yDelta
       let distance = Math.sqrt(distanceSq)
 
-      if (distance < 7) {
+       // Once the player comes in close proximity, make them look at the player
+      if (distance < 8) {
           let right = xDelta > 0
           if (right) {
             //Face shooter right or left
@@ -655,34 +675,43 @@ setInterval(() =>{
           else {
             entity.type = npcFacingLeft
           }
-          shootBullet(entity, entity.x, entity.y)
+          if (distance < 7) {
+            shootBullet(entity, entity.x, entity.y)
+          }
       }
   });
   
-  // Process bullets
+  // Process moving bullets
   getAll().forEach(entity=>{
+        //Is the entity a bullet?
         if (entity.type == bullet) {
+          // Calculate difference to player
           let xDiff = getFirst(player).x - entity.x
           let removedEntity = false
+          //Find all entities in game
           getTile(entity.x, entity.y).forEach(obstacle=>{
-            // TODO is obstacle method
-            if (obstacle.type != "m" && obstacle.type != "L" && 
-                obstacle.type != "P") {
+            // If the bullet did not hit an NPC (since they are the shooters) 
+            // Also check if the obstacle is not the same bullet.
+            if (obstacle.type != bullet && !isNPC(obstacle.type)) {
               entity.remove()
               removedEntity = true
-              let isPlayer = obstacle.type == rightFacingPlayer || obstacle.type == rightPunchingPlayer || obstacle.type == leftFacingPlayer
-              || obstacle.type == leftPunchingPlayer
-              spawnParticle(entity.x, entity.y, isPlayer ? 1 : 0)
-              if (isPlayer) {
+              // Spawn the heart particle if it was a player,
+              // Spawn the explosion particle otherwise
+              spawnParticle(entity.x, entity.y, isPlayer(obstacle.type) ? 1 : 0)
+              if (isPlayer(obstacle.type)) {
                   lives--
               }
               return
             }
           })
           if (removedEntity) return
+
+          // Process delta movement to player (bullet movement behavior)
           let yDiff = getFirst(player).y - entity.y
+          // Move the bullet toward the player
           entity.x += xDiff > 0 ? 1 : -1
 
+          // Destroy bullets meeting the edge
           if (entity.x == (width() - 1)
               || entity.x == 0) {
               var interval = setInterval(() =>{
@@ -708,7 +737,7 @@ setInterval(() =>{
     clearText()
       addText("Loading new level...", {y: 4, color:`4`})
       getAll().forEach(entity=>{
-        if (entity.type!="m" && entity.type!= "f") {
+        if (entity.type!=bullet && entity.type!= fireParticle) {
             if (entity.x != 0) {
               entity.x--
               getFirst(player).x++
