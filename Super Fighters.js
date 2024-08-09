@@ -26,6 +26,10 @@ const sky = "s"
 
 let player = rightFacingPlayer
 
+let happySound = tune`
+193.5483870967742: B5~193.5483870967742,
+6000`
+
 let explosionSound = tune`
 500: A5^500,
 15500`
@@ -461,13 +465,13 @@ onInput("l", () => {
        if (tile.type != rightFacingPlayer && tile.type != leftFacingPlayer) {
           //If it bedrock, we cnanot break it!
           if (tile.type == "B") {
-            spawnParticle(particleX, particleY)
+            spawnParticle(particleX, particleY, 0)
             addSprite(particleX, particleY, bedrock)
           }
           else {
             //Destroy block next to them
             clearTile(particleX, particleY)
-            spawnParticle(particleX, particleY)
+            spawnParticle(particleX, particleY, 0)
           }
 
          return
@@ -492,13 +496,6 @@ function spawnParticle(particleX, particleY, type) {
     let currentTime = Date.now()
     if (currentTime - lastParticleSound > 100) {
       lastParticleSound = currentTime
-
-      if (type == 0) {
-        playTune(explosionSound)
-      }
-      else if (type == 1) {
-        
-      }
       //Add particle
 
       if (type == 0) {
@@ -543,13 +540,13 @@ onInput("j", () => {
        if (tile.type != rightFacingPlayer && tile.type != leftFacingPlayer) {
           //If it bedrock, we cnanot break it!
           if (tile.type == "B") {
-            spawnParticle(particleX, particleY)
+            spawnParticle(particleX, particleY, 0)
             addSprite(particleX, particleY, bedrock)
           }
           else {
             //Destroy block next to them
             clearTile(particleX, particleY)
-            spawnParticle(particleX, particleY)
+            spawnParticle(particleX, particleY, 0)
           }
          return
         }
@@ -681,7 +678,12 @@ setInterval(() =>{
                 obstacle.type != "P") {
               entity.remove()
               removedEntity = true
-              spawnParticle(entity.x, entity.y)
+              let isPlayer = obstacle.type == rightFacingPlayer || obstacle.type == rightPunchingPlayer || obstacle.type == leftFacingPlayer
+              || obstacle.type == leftPunchingPlayer
+              spawnParticle(entity.x, entity.y, isPlayer ? 1 : 0)
+              if (isPlayer) {
+                  lives--
+              }
               return
             }
           })
@@ -692,7 +694,7 @@ setInterval(() =>{
           if (entity.x == (width() - 1)
               || entity.x == 0) {
               var interval = setInterval(() =>{
-                  spawnParticle(entity.x, entity.y)
+                  spawnParticle(entity.x, entity.y, 0)
                   entity.remove()
                 clearInterval(interval)
               }, 200)
@@ -703,9 +705,12 @@ setInterval(() =>{
 }, 300)
 
 let changingLevels = false
-setInterval(() =>{
+
+let startingLives = 5
+let lives = startingLives
+setInterval(() =>{  
   //Changing levels
-  if (getFirst(player).x == width() - 1) {
+  if (player && getFirst(player).x == width() - 1) {
     if (!levels[level + 1]) return
     changingLevels = true
     clearText()
@@ -764,6 +769,22 @@ setInterval(() =>{
 
   if (level == levels.length - 1) {
       addText("You win!", {y: 3, color:`4`})
+  }
+
+  if (lives <= 0 && !changingLevels) {
+     level = 0
+      getAll().forEach(entity=>{
+        if (entity.type!=rightFacingPlayer && entity.type!= leftFacingPlayer
+           && entity.type!=rightPunchingPlayer && entity.type != leftPunchingPlayer) {
+            entity.remove()
+        }
+      })
+      setMap(levels[level])
+      lives = startingLives
+  }
+  let text = "Lives: " + lives
+  if (level < levels.length - 1) {
+    addText(text, {x: width() - 3, y: 5, color:`5`})
   }
   
 }, 40)
