@@ -21,6 +21,8 @@ const bedrock = "B"
 const ladder = "c"
 const fireParticle = "f"
 const bullet = "m"
+const heart = "h"
+const sky = "s"
 
 let player = rightFacingPlayer
 
@@ -262,8 +264,44 @@ LLLLL000LLLLLLLL
 ................
 ................
 ................
-................`]
+................`],
+  [heart, bitmap`
+.0000000.0000003
+0332283303322280
+0388888333888830
+0888888338888830
+0888888888888830
+0888288888888880
+0888288888888880
+0388828888888880
+0388888888888830
+0338888888888830
+.033888888888330
+..03888888883330
+..0338888883300.
+.H.0388888830H..
+....03388830....
+H....000000...H.`],
+  [sky, bitmap`
+2222222222222222
+2222222222222222
+2222222222222222
+2222222222222222
+2222222222222222
+2222222222222222
+2222222222222222
+2222222222222222
+2222222222222222
+2222222222222222
+2222222222222222
+2222222222222222
+2222222222222222
+2222222222222222
+2222222222222222
+2222222222222222`]
 )
+
+setBackground(sky)
 
 setSolids([rightFacingPlayer, leftFacingPlayer, box, bedrock])
 
@@ -275,10 +313,10 @@ const levels = [
 ...............
 ...............
 ...............
-p..............
+p......LP......
 ..b..........cb
 ..b..........cb
-..b....LP....cb`,
+..b..........cb`,
   map`
 ...............
 ...............
@@ -382,8 +420,8 @@ setPushables({
 let jumping = false
 
 function playerDistanceToGround(player) {
-    let playerY = getFirst(player).y
-    let playerX = getFirst(player).x
+    let playerY = player.y
+    let playerX = player.x
     let distanceToGround = 0
 
     // Check tiles below the player
@@ -446,16 +484,26 @@ onInput("l", () => {
 
 })
 
-lastExplosionSound = Date.now()
+lastParticleSound = Date.now()
 
-function spawnParticle(particleX, particleY) {
+
+function spawnParticle(particleX, particleY, type) {
     // Explosion sound  
     let currentTime = Date.now()
-    if (currentTime - lastExplosionSound > 100) {
-      lastExplosionSound = currentTime
-      playTune(explosionSound)
+    if (currentTime - lastParticleSound > 100) {
+      lastParticleSound = currentTime
+
+      if (type == 0) {
+        playTune(explosionSound)
+      }
+      else if (type == 1) {
+        
+      }
       //Add particle
-          
+
+      if (type == 0) {
+                playTune(explosionSound)
+
       addSprite(particleX, particleY, fireParticle)
           var tempInterval = setInterval(() => {
             //Destroy particle later
@@ -466,6 +514,20 @@ function spawnParticle(particleX, particleY) {
             });
             clearInterval(tempInterval)
           }, 100);
+      }
+      else if (type == 1) {
+          playTune(happySound)
+           addSprite(particleX, particleY, heart)
+          var tempInterval = setInterval(() => {
+            //Destroy particle later
+            getTile(particleX, particleY).forEach(sprite => {
+              if (sprite.type == heart) {
+                sprite.remove()
+              }
+            });
+            clearInterval(tempInterval)
+          }, 100);
+      }
     }
 }
 
@@ -506,8 +568,8 @@ onInput("j", () => {
 onInput("w", () => {
   let playerY = getFirst(player).y
   let playerX = getFirst(player).x
-  let distanceToGround = playerDistanceToGround(player)
-  let onGround = playerIsOnGround(player)
+  let distanceToGround = playerDistanceToGround(getFirst(player))
+  let onGround = playerIsOnGround(getFirst(player))
   if (!jumping && onGround) {
     getFirst(player).y -= 1
     jumping = true
@@ -517,8 +579,8 @@ onInput("w", () => {
 
       let playerY = getFirst(player).y
       let playerX = getFirst(player).x
-      let distanceToGround = playerDistanceToGround(player)
-      let onGround = playerIsOnGround(player)
+      let distanceToGround = playerDistanceToGround(getFirst(player))
+      let onGround = playerIsOnGround(getFirst(player))
       if (!onGround) {
         // Push them up
         getFirst(player).y = lastPlayerY
@@ -563,13 +625,19 @@ onInput("d", () => {
 
 setInterval(() => {
   if (!jumping) {
-    // Player Gravity
-    let playerY = getFirst(player).y
-    let playerX = getFirst(player).x
-    let onGround = playerIsOnGround(player)
-    if (!onGround) {
-      getFirst(player).y += 1
-    }
+    // Gravity for all game players!
+    getAll().forEach(entity=>{
+      if (entity.type == npcFacingRight
+         || entity.type == npcFacingLeft
+         || entity.type == rightFacingPlayer
+         || entity.type == leftFacingPlayer
+         || entity.type == rightPunchingPlayer
+         || entity.type == leftPunchingPlayer) {
+        let onGround = playerIsOnGround(entity)
+        if (!onGround) {
+          entity.y += 1        }
+      }
+    })
   }
 }, 30)
 
@@ -713,6 +781,8 @@ function distance(player, entityX, entityY) {
 
 let lastShot = Date.now()
 
+const entityMetadata = {}
+
 function shootBullet(shooter, originX, originY) {
   let currentTime = Date.now()
   if (currentTime - lastShot > 1000) {
@@ -725,6 +795,14 @@ function shootBullet(shooter, originX, originY) {
              shooter.type == rightFacingPlayer) {
       addSprite(originX, originY, bullet)
     }
+    let i = 0
+    getAll().forEach(entity=>{
+      if (entity.type==bullet) {
+        entityMetadata[i]
+        console.log("entity: " + entity)
+        i++
+      }
+    })
   }
 }
 
