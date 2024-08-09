@@ -658,7 +658,7 @@ onInput("l", () => {
     attackEntity(player, particleX, particleY);
   }
   var intervalId = setInterval(() => {
-    if (player && getFirst(player).type == rightPunchingPlayer) {
+    if (player && getFirst(player) && getFirst(player).type == rightPunchingPlayer) {
       getFirst(player).type = rightFacingPlayer;
       player = rightFacingPlayer;
     }
@@ -679,7 +679,7 @@ onInput("j", () => {
     attackEntity(player, particleX, particleY);
   }
   var intervalId = setInterval(() => {
-    if (getFirst(player).type == leftPunchingPlayer) {
+    if (player && getFirst(player) && getFirst(player).type == leftPunchingPlayer) {
       getFirst(player).type = leftFacingPlayer;
       player = leftFacingPlayer;
     }
@@ -700,6 +700,7 @@ onInput("w", () => {
 
     // Keep them in the air for some time.
     var intervalId = setInterval(() => {
+      if (!getFirst(player)) return
       let lastPlayerY = getFirst(player).y;
       let onGround = isOnGround(getFirst(player));
       if (!onGround) {
@@ -838,7 +839,7 @@ setInterval(() => {
     // Show new loading text...
     clearText();
     addText("Loading new level...", { y: 4, color: `4` });
-
+    
     // Shift all entities to the left
     getAll().forEach((entity) => {
       if (
