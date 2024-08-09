@@ -15,6 +15,8 @@ const leftPunchingPlayer = "n";
 
 const npcFacingRight = "P";
 const npcFacingLeft = "L";
+const npcEvilLeft = "k";
+const npcEvilRight = "K";
 
 const box = "b";
 const bedrock = "B";
@@ -199,6 +201,46 @@ CC0002222200000.
 ....00555050....
 ....0055550.....
 ....0555550.....
+....05555550....
+...0055555500...`,
+  ],
+  [
+    npcEvilLeft,
+    bitmap`
+....00000000....
+....05555550....
+....05555550....
+....033533500...
+....055555550...
+97000555555500..
+777505555555500.
+075555555005550.
+005555555055550.
+..0055555055500.
+...00555505000..
+....00555050....
+....0055550.....
+....0555550.....
+....05555550....
+...0055555500...`,
+  ],
+  [
+    npcEvilRight,
+    bitmap`
+....00000000....
+....05555550....
+....05555550....
+...005335330....
+...055555550..00
+..00555555500000
+.005555555505736
+.055500555555573
+.055550555555500
+.0055505555500..
+..00050555500...
+....05055500....
+.....0555500....
+.....0555550....
 ....05555550....
 ...0055555500...`,
   ],
@@ -486,7 +528,12 @@ function isEntity(type) {
  * @returns true or false
  */
 function isNPC(type) {
-  return type == npcFacingLeft || type == npcFacingRight;
+  return (
+    type == npcFacingLeft ||
+    type == npcFacingRight ||
+    type == npcEvilLeft ||
+    type == npcEvilRight
+  );
 }
 
 /**
@@ -589,11 +636,16 @@ function shootBullet(shooter, originX, originY) {
   if (currentTime - lastShot > 1000) {
     lastShot = currentTime;
     //TODO Possibly add shooting functionality for players
-    if (shooter.type == npcFacingLeft || shooter.type == leftFacingPlayer) {
+    if (
+      shooter.type == npcFacingLeft ||
+      shooter.type == leftFacingPlayer ||
+      shooter.type == npcEvilLeft
+    ) {
       addSprite(originX, originY, bullet);
     } else if (
       shooter.type == npcFacingRight ||
-      shooter.type == rightFacingPlayer
+      shooter.type == rightFacingPlayer ||
+      shooter.type == npcEvilRight
     ) {
       addSprite(originX, originY, bullet);
     }
@@ -658,7 +710,11 @@ onInput("l", () => {
     attackEntity(player, particleX, particleY);
   }
   var intervalId = setInterval(() => {
-    if (player && getFirst(player) && getFirst(player).type == rightPunchingPlayer) {
+    if (
+      player &&
+      getFirst(player) &&
+      getFirst(player).type == rightPunchingPlayer
+    ) {
       getFirst(player).type = rightFacingPlayer;
       player = rightFacingPlayer;
     }
@@ -679,7 +735,11 @@ onInput("j", () => {
     attackEntity(player, particleX, particleY);
   }
   var intervalId = setInterval(() => {
-    if (player && getFirst(player) && getFirst(player).type == leftPunchingPlayer) {
+    if (
+      player &&
+      getFirst(player) &&
+      getFirst(player).type == leftPunchingPlayer
+    ) {
       getFirst(player).type = leftFacingPlayer;
       player = leftFacingPlayer;
     }
@@ -700,7 +760,7 @@ onInput("w", () => {
 
     // Keep them in the air for some time.
     var intervalId = setInterval(() => {
-      if (!getFirst(player)) return
+      if (!getFirst(player)) return;
       let lastPlayerY = getFirst(player).y;
       let onGround = isOnGround(getFirst(player));
       if (!onGround) {
@@ -777,9 +837,9 @@ setInterval(() => {
       // Evaluate direction of player using delta x (as it is a 2D game)
       let right = getFirst(player).x - entity.x > 0;
       if (right) {
-        entity.type = npcFacingRight;
+        entity.type = npcEvilRight;
       } else {
-        entity.type = npcFacingLeft;
+        entity.type = npcEvilLeft;
       }
       shootBullet(entity, entity.x, entity.y);
     }
@@ -809,7 +869,6 @@ setInterval(() => {
         }
       });
       if (removedEntity) return;
-
       // Process delta movement to player (bullet movement behavior)
       let yDiff = getFirst(player).y - entity.y;
       // Move the bullet toward the player
@@ -839,7 +898,7 @@ setInterval(() => {
     // Show new loading text...
     clearText();
     addText("Loading new level...", { y: 4, color: `4` });
-    
+
     // Shift all entities to the left
     getAll().forEach((entity) => {
       if (
@@ -888,7 +947,7 @@ setInterval(() => {
       case 6:
         addText("What is next?...", { y: 2, color: `5` });
         break;
-    } 
+    }
 
     if (level == levels.length - 1) {
       addText("You win!", { y: 3, color: `4` });
