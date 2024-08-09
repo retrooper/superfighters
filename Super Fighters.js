@@ -1,12 +1,18 @@
 /*
-First time? Check out the tutorial game:
-https://sprig.hackclub.com/gallery/getting_started
-
 @title: Super Fighters
 @author: retrooper
-@tags: []
-@addedOn: 2024-00-00
+@tags: ['shooter', 'platformer', 'fighting', `singleplayer`]
+@addedOn: 2024-08-09
 */
+
+// Constants
+const gameTitle = "Superfighters v1";
+const gameTitleColor = { y: 1, color: `5` };
+const startingLives = 5;
+const movementDelay = 150;
+const shootDelay = 1000;
+const soundDelay = 100;
+const jumpDuration = 280;
 
 const rightFacingPlayer = "p";
 const leftFacingPlayer = "l";
@@ -394,12 +400,6 @@ let level = 0;
 let jumping = false;
 let changingLevels = false;
 
-// Constants
-const gameTitle = "Superfighters v1";
-const gameTitleColor = { y: 1, color: `5` };
-const startingLives = 5;
-const movementDelay = 150;
-
 // Internal variables
 let lastParticleSound = Date.now();
 let lastLeftMovement = Date.now();
@@ -633,7 +633,7 @@ function distance(player, entityX, entityY) {
  */
 function shootBullet(shooter, originX, originY) {
   let currentTime = Date.now();
-  if (currentTime - lastShot > 1000) {
+  if (currentTime - lastShot > shootDelay) {
     lastShot = currentTime;
     //TODO Possibly add shooting functionality for players
     if (
@@ -665,7 +665,7 @@ function shootBullet(shooter, originX, originY) {
 function spawnParticle(particleX, particleY, type) {
   // Calculate time elapsed since last sound effect
   let currentTime = Date.now();
-  if (currentTime - lastParticleSound > 100) {
+  if (currentTime - lastParticleSound > soundDelay) {
     lastParticleSound = currentTime;
 
     // Spawn the corresponding particle
@@ -769,7 +769,7 @@ onInput("w", () => {
       }
       clearInterval(intervalId);
       jumping = false;
-    }, 300);
+    }, jumpDuration);
   }
 });
 
