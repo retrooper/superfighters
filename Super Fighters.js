@@ -308,8 +308,21 @@ H....000000...H.`],
 setBackground(sky)
 
 setSolids([rightFacingPlayer, leftFacingPlayer, box, bedrock])
-
+// Game data
 let level = 0
+let jumping = false
+let changingLevels = false
+
+// Constants
+const startingLives = 5
+
+// Internal variables
+let lastParticleSound = Date.now()
+let lastLeftMovement = Date.now()
+let lastRightMovement = Date.now()
+let lastShot = Date.now()
+let lives = startingLives
+
 const levels = [
   map`
 ...............
@@ -413,11 +426,9 @@ setPushables({
   [box]: []
 })
 
-
 function isEntity(type) {
   return isNPC(type) || isPlayer(type)
 }
-
 
 function isNPC(type) {
   return type == npcFacingLeft || type == npcFacingRight
@@ -428,9 +439,7 @@ function isPlayer(type) {
   type == leftPunchingPlayer || type == rightPunchingPlayer
 }
 
-let jumping = false
-
-function playerDistanceToGround(player) {
+function distanceToGround(player) {
     let playerY = player.y
     let playerX = player.x
     let distanceToGround = 0
@@ -450,67 +459,44 @@ function playerDistanceToGround(player) {
     return height() - playerY - 1
 }
 
-function playerIsOnGround(player) {
-    return playerDistanceToGround(player) == 0
+function isOnGround(player) {
+    return distanceToGround(player) == 0
 }
 
-function attackInSameSpace(player) {
-  
-}
-
-onInput("l", () => {
-   // Handle close proximity attacks
-  if (!player) return
-  let particleX = getFirst(player).x + 1
-  let particleY = getFirst(player).y
-  if (getFirst(player).type == rightFacingPlayer) {
-        getFirst(player).type = rightPunchingPlayer
-        player = rightPunchingPlayer
-      //Check sprite next to the player
-      let neighboringTiles = getTile(particleX, particleY)
-    neighboringTiles.forEach(tile=>{
-       if (tile.type != rightFacingPlayer && tile.type != leftFacingPlayer) {
-          //If it bedrock, we cnanot break it!
-          if (tile.type == bedrock) {
-            spawnParticle(particleX, particleY, 0)
-            addSprite(particleX, particleY, bedrock)
-          }
-          else {
-            //Destroy block next to them
-            clearTile(particleX, particleY)
-            spawnParticle(particleX, particleY, 0)
-          }
-
-         return
-        }
-    })
-  }
-  var intervalId = setInterval(() => {
-    if (player && getFirst(player).type == rightPunchingPlayer) {
-      getFirst(player).type = rightFacingPlayer
-      player = rightFacingPlayer
+function attackEntity(player, entityX, entityY) {    
+  // Check sprite next to the player
+  getTile(entityX, entityY).forEach(tile=>{
+    // Confirm they are not destroying a player
+    if (isPlayer(tile.type)) return
+    //If it bedrock, we cannot break it!
+    if (tile.type == bedrock) {
+      spawnParticle(entityX, entityY, 0)
+      addSprite(entityX, entityY, bedrock)
     }
-    clearInterval(intervalId)
-  }, 200)
+    else {
+      // Destroy block next to them
+      clearTile(entityX, entityY)
+      spawnParticle(entityX, entityY, 0)
+    }
+    return
+  })
+}
 
-})
-
-lastParticleSound = Date.now()
-
-
+// particleX: particle position x
+// particleY: particle position y
+// type: sound type
 function spawnParticle(particleX, particleY, type) {
-    // Explosion sound  
+    // Calculate time elapsed since last sound effect
     let currentTime = Date.now()
     if (currentTime - lastParticleSound > 100) {
       lastParticleSound = currentTime
-      //Add particle
 
+      // Spawn the corresponding particle
       if (type == 0) {
-                playTune(explosionSound)
-
-      addSprite(particleX, particleY, fireParticle)
-          var tempInterval = setInterval(() => {
-            //Destroy particle later
+        playTune(explosionSound)
+        addSprite(particleX, particleY, fireParticle)
+        var tempInterval = setInterval(() => {
+        // Destroy particle later
             getTile(particleX, particleY).forEach(sprite => {
               if (sprite.type == fireParticle) {
                 sprite.remove()
@@ -523,7 +509,7 @@ function spawnParticle(particleX, particleY, type) {
           playTune(happySound)
            addSprite(particleX, particleY, heart)
           var tempInterval = setInterval(() => {
-            //Destroy particle later
+            // Destroy particle later
             getTile(particleX, particleY).forEach(sprite => {
               if (sprite.type == heart) {
                 sprite.remove()
@@ -535,31 +521,40 @@ function spawnParticle(particleX, particleY, type) {
     }
 }
 
+// Handle right punch
+onInput("l", () => {
+  if (!player) return
+  let particleX = getFirst(player).x + 1
+  let particleY = getFirst(player).y
+  // Are they facing in the right direction (so they can attack in that direction)
+  if (getFirst(player).type == rightFacingPlayer) {
+      // Switch to the punching animation
+      getFirst(player).type = rightPunchingPlayer
+      player = rightPunchingPlayer
+      attackEntity(player, particleX, particleY)
+  }
+  var intervalId = setInterval(() => {
+    if (player && getFirst(player).type == rightPunchingPlayer) {
+      getFirst(player).type = rightFacingPlayer
+      player = rightFacingPlayer
+    }
+    clearInterval(intervalId)
+  }, 200)
+
+})
+
+// Handle left punch
 onInput("j", () => {
   if (!player) return
   let particleX = getFirst(player).x - 1
   let particleY = getFirst(player).y
+  // Are they facing in the left direction? (to be able to punch left)
   if (getFirst(player).type == leftFacingPlayer) {
-        getFirst(player).type = leftPunchingPlayer
-        player = leftPunchingPlayer
-      //Check sprite next to the player
-       let neighboringTiles = getTile(particleX, particleY)
-        neighboringTiles.forEach(tile=>{
-       if (tile.type != rightFacingPlayer && tile.type != leftFacingPlayer) {
-          //If it bedrock, we cnanot break it!
-          if (tile.type == bedrock) {
-            spawnParticle(particleX, particleY, 0)
-            addSprite(particleX, particleY, bedrock)
-          }
-          else {
-            //Destroy block next to them
-            clearTile(particleX, particleY)
-            spawnParticle(particleX, particleY, 0)
-          }
-         return
-        }
-      })
-      }
+      // Switch to the punching animation
+      getFirst(player).type = leftPunchingPlayer
+      player = leftPunchingPlayer
+      attackEntity(player, particleX, particleY)
+  }
   var intervalId = setInterval(() => {
     if (getFirst(player).type == leftPunchingPlayer) {
       getFirst(player).type = leftFacingPlayer
@@ -570,23 +565,25 @@ onInput("j", () => {
 
 })
 
+// Jump functionality
 onInput("w", () => {
   if (!player) return
+  
   let playerY = getFirst(player).y
   let playerX = getFirst(player).x
-  let distanceToGround = playerDistanceToGround(getFirst(player))
-  let onGround = playerIsOnGround(getFirst(player))
+  // Is the player on ground (and not jumping)
+  let onGround = isOnGround(getFirst(player))
   if (!jumping && onGround) {
+    //Increase y
     getFirst(player).y -= 1
     jumping = true
 
+    // Keep them in the air for some time.
     var intervalId = setInterval(() => {
       let lastPlayerY = getFirst(player).y
-
       let playerY = getFirst(player).y
       let playerX = getFirst(player).x
-      let distanceToGround = playerDistanceToGround(getFirst(player))
-      let onGround = playerIsOnGround(getFirst(player))
+      let onGround = isOnGround(getFirst(player))
       if (!onGround) {
         // Push them up
         getFirst(player).y = lastPlayerY
@@ -596,10 +593,6 @@ onInput("w", () => {
     }, 300)
   }
 })
-
-let lastLeftMovement = Date.now()
-let lastRightMovement = Date.now()
-
 
 const movementDelay = 150
 
@@ -612,6 +605,7 @@ onInput("a", () => {
         getFirst(player).type = leftFacingPlayer
         player = leftFacingPlayer
     }
+    // Move to the left direction
     getFirst(player).x -= 1
   }
 })
@@ -625,23 +619,21 @@ onInput("d", () => {
       getFirst(player).type = rightFacingPlayer
       player = rightFacingPlayer
     }
+    // Move to the right direction
     getFirst(player).x += 1
   }
 })
 
 setInterval(() => {
   if (!jumping) {
-    // Gravity for all game players!
+    // Gravity for all living entities!
     getAll().forEach(entity=>{
-      if (entity.type == npcFacingRight
-         || entity.type == npcFacingLeft
-         || entity.type == rightFacingPlayer
-         || entity.type == leftFacingPlayer
-         || entity.type == rightPunchingPlayer
-         || entity.type == leftPunchingPlayer) {
-        let onGround = playerIsOnGround(entity)
+      if (isEntity(entity.type)) {
+        let onGround = isOnGround(entity)
         if (!onGround) {
-          entity.y += 1        }
+          // Move downward 
+          entity.y += 1
+        }
       }
     })
   }
@@ -652,32 +644,20 @@ setInterval(() =>{
      getAll().forEach(entity => {
       // Loop over all NPCs
       if (!isNPC(entity.type)) return
-
-       
-      let playerX = getFirst(player).x
-      let playerY = getFirst(player).y
-
-      let entityX = entity.x
-      let entityY = entity.y
-      //distance = sqrt(x^2 + y^2)
-      let xDelta = playerX - entityX
-      let yDelta = playerY - entityY
-      let distanceSq = xDelta * xDelta + yDelta * yDelta
-      let distance = Math.sqrt(distanceSq)
-
+       // Calculate distance to the player
+      let dist = distance(getFirst(player), entity.x, entity.y)
        // Once the player comes in close proximity, make them look at the player
-      if (distance < 8) {
-          let right = xDelta > 0
+      if (dist < 7) {
+          // Evaluate direction of player using delta x (as it is a 2D game)
+          let right = (getFirst(player).x - entity.x) > 0
           if (right) {
-            //Face shooter right or left
             entity.type = npcFacingRight
           }
           else {
             entity.type = npcFacingLeft
           }
-          if (distance < 7) {
-            shootBullet(entity, entity.x, entity.y)
-          }
+          shootBullet(entity, entity.x, entity.y)
+          
       }
   });
   
@@ -725,10 +705,6 @@ setInterval(() =>{
 
 }, 300)
 
-let changingLevels = false
-
-let startingLives = 5
-let lives = startingLives
 setInterval(() =>{  
   //Changing levels
   if (player && getFirst(player).x == width() - 1) {
@@ -821,10 +797,6 @@ function distance(player, entityX, entityY) {
   return Math.sqrt(distanceSq)
 }
 
-let lastShot = Date.now()
-
-const entityMetadata = {}
-
 function shootBullet(shooter, originX, originY) {
   let currentTime = Date.now()
   if (currentTime - lastShot > 1000) {
@@ -837,17 +809,5 @@ function shootBullet(shooter, originX, originY) {
              shooter.type == rightFacingPlayer) {
       addSprite(originX, originY, bullet)
     }
-    let i = 0
-    getAll().forEach(entity=>{
-      if (entity.type==bullet) {
-        entityMetadata[i]
-        console.log("entity: " + entity)
-        i++
-      }
-    })
   }
 }
-
-afterInput(() => {
-    //console.log(allNpcs)
-})
