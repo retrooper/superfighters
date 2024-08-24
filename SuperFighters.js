@@ -428,11 +428,18 @@ H....000000...H.`,
 
 setBackground(sky);
 
-setSolids([rightFacingPlayer, leftFacingPlayer, 
-           leftPunchingPlayer, rightPunchingPlayer,
-           npcEvilLeft, npcEvilRight,
-           npcFacingLeft, npcFacingRight,
-           box, bedrock]);
+setSolids([
+  rightFacingPlayer,
+  leftFacingPlayer,
+  leftPunchingPlayer,
+  rightPunchingPlayer,
+  npcEvilLeft,
+  npcEvilRight,
+  npcFacingLeft,
+  npcFacingRight,
+  box,
+  bedrock,
+]);
 
 const levels = [
   map`
@@ -701,11 +708,11 @@ function spawnParticle(particleX, particleY, type) {
     lastParticleSound = currentTime;
 
     if (particleX > width() - 1) {
-        particleX = width() - 1;
-      }
-      if (particleX < 0) {
-        particleX = 0;
-      }
+      particleX = width() - 1;
+    }
+    if (particleX < 0) {
+      particleX = 0;
+    }
     if (particleY > height() - 1) {
       particleY = height() - 1;
     }
@@ -891,7 +898,7 @@ function gameReset() {
 }
 
 // Moving entity handler
-  let i = 0;
+let i = 0;
 setInterval(() => {
   if (!player || !getFirst(player)) return;
   // Process entity proximity detection (NPC player tracing logic)
@@ -916,7 +923,6 @@ setInterval(() => {
         entity.type = npcEvilLeft;
       }
 
-      
       if (dist < 7) {
         shootBullet(entity, entity.x, entity.y);
       }
@@ -956,11 +962,11 @@ setInterval(() => {
 
       // Destroy bullets meeting the edge
       if (entity.x == width() - 1 || entity.x == 0) {
-        entity.remove(); 
+        entity.remove();
         var interval = setInterval(() => {
           //Is within bounds?
           if (entity.x <= width() - 1 && entity.x >= 0) {
-             spawnParticle(entity.x, entity.y, 0);
+            spawnParticle(entity.x, entity.y, 0);
           }
           clearInterval(interval);
         }, 200);
@@ -973,10 +979,9 @@ setInterval(() => {
 // Level changing handler, Player death handler, Lives rendering handler
 setInterval(() => {
   if (!player || !getFirst(player)) {
-      player = rightFacingPlayer;
-    console.log("HUGE FIX!");
+    player = rightFacingPlayer;
     return;
-  };
+  }
 
   // Changing levels functionality (if they reach the edge)
   if (getFirst(player).x == width() - 1) {
