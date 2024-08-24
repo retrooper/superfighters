@@ -428,7 +428,11 @@ H....000000...H.`,
 
 setBackground(sky);
 
-setSolids([rightFacingPlayer, leftFacingPlayer, box, bedrock]);
+setSolids([rightFacingPlayer, leftFacingPlayer, 
+           leftPunchingPlayer, rightPunchingPlayer,
+           npcEvilLeft, npcEvilRight,
+           npcFacingLeft, npcFacingRight,
+           box, bedrock]);
 
 const levels = [
   map`
@@ -453,7 +457,7 @@ p......LP..b.cB`,
 ..............B
 .........b...BB
 .......b...bbBB
-p.bbbbbbb....BB`,
+p.bbbbbbb...LBB`,
   map`
 ...............
 ...............
@@ -696,6 +700,18 @@ function spawnParticle(particleX, particleY, type) {
   if (currentTime - lastParticleSound > soundDelay) {
     lastParticleSound = currentTime;
 
+    if (particleX > width() - 1) {
+        particleX = width() - 1;
+      }
+      if (particleX < 0) {
+        particleX = 0;
+      }
+    if (particleY > height() - 1) {
+      particleY = height() - 1;
+    }
+    if (particleY < 0) {
+      particleY = 0;
+    }
     // Spawn the corresponding particle
     if (type == 0) {
       playTune(explosionSound);
@@ -821,7 +837,6 @@ onInput("a", () => {
 // Handle right directional movement
 onInput("d", () => {
   if (!player || !getFirst(player)) return;
-
   let currentTime = Date.now();
   if (currentTime - lastRightMovement >= movementDelay) {
     lastRightMovement = currentTime;
@@ -876,6 +891,7 @@ function gameReset() {
 }
 
 // Moving entity handler
+  let i = 0;
 setInterval(() => {
   if (!player || !getFirst(player)) return;
   // Process entity proximity detection (NPC player tracing logic)
@@ -885,7 +901,13 @@ setInterval(() => {
     // Calculate distance to the player
     let dist = distance(getFirst(player), entity.x, entity.y);
     // Once the player comes in close proximity, make them look at the player
-    if (dist < 7) {
+    if (dist < 10) {
+      let xDiff = getFirst(player).x - entity.x;
+      //Prevent npc from walking into the same space as player, making it not dangerous.
+      if (i % 2 == 0 && Math.abs(xDiff) > 1) {
+        let newPosX = entity.x + (xDiff > 0 ? 1 : -1);
+        entity.x = newPosX;
+      }
       // Evaluate direction of player using delta x (as it is a 2D game)
       let right = getFirst(player).x - entity.x > 0;
       if (right) {
@@ -893,7 +915,11 @@ setInterval(() => {
       } else {
         entity.type = npcEvilLeft;
       }
-      shootBullet(entity, entity.x, entity.y);
+
+      
+      if (dist < 7) {
+        shootBullet(entity, entity.x, entity.y);
+      }
     }
   });
 
@@ -930,19 +956,27 @@ setInterval(() => {
 
       // Destroy bullets meeting the edge
       if (entity.x == width() - 1 || entity.x == 0) {
+        entity.remove(); 
         var interval = setInterval(() => {
-          spawnParticle(entity.x, entity.y, 0);
-          entity.remove();
+          //Is within bounds?
+          if (entity.x <= width() - 1 && entity.x >= 0) {
+             spawnParticle(entity.x, entity.y, 0);
+          }
           clearInterval(interval);
         }, 200);
       }
     }
   });
+  i++;
 }, 300);
 
 // Level changing handler, Player death handler, Lives rendering handler
 setInterval(() => {
-  if (!player || !getFirst(player)) return;
+  if (!player || !getFirst(player)) {
+      player = rightFacingPlayer;
+    console.log("HUGE FIX!");
+    return;
+  };
 
   // Changing levels functionality (if they reach the edge)
   if (getFirst(player).x == width() - 1) {
