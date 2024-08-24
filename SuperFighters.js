@@ -1,8 +1,8 @@
 /*
 @title: SuperFighters
 @author: retrooper
-@tags: ['shooter', 'platformer', 'fighting', `singleplayer`]
-@addedOn: 2024-08-09
+@tags: ['shooter', 'platformer', 'fighting', 'singleplayer']
+@addedOn: 2024-08-15
 */
 
 // Constants
@@ -41,7 +41,8 @@ const box = "b";
 const bedrock = "B";
 const ladder = "c";
 const fireParticle = "f";
-const bullet = "m";
+const bullet_left = "m";
+const bullet_right = "M";
 const heart = "h";
 const sky = "s";
 
@@ -344,7 +345,7 @@ LLLLL000LLLLLLLL
 ......6.........`,
   ],
   [
-    bullet,
+    bullet_left,
     bitmap`
 ................
 ................
@@ -355,6 +356,26 @@ LLLLL000LLLLLLLL
 ................
 ......96F6......
 ......F666......
+................
+................
+................
+................
+................
+................
+................`,
+  ],
+  [
+    bullet_right,
+    bitmap`
+................
+................
+................
+................
+................
+................
+................
+......6F69......
+......666F......
 ................
 ................
 ................
@@ -627,6 +648,15 @@ function distance(player, entityX, entityY) {
 }
 
 /**
+ * Is the entity type a kind of bullet.
+ * @param {*} entity type
+ * @returns
+ */
+function isBullet(type) {
+  return type == bullet_right || type == bullet_left;
+}
+
+/**
  * Ellicit an attack from an NPC.
  * Shoot a bullet.
  * @param {*} shooter attacker
@@ -643,13 +673,13 @@ function shootBullet(shooter, originX, originY) {
       shooter.type == leftFacingPlayer ||
       shooter.type == npcEvilLeft
     ) {
-      addSprite(originX, originY, bullet);
+      addSprite(originX, originY, bullet_left);
     } else if (
       shooter.type == npcFacingRight ||
       shooter.type == rightFacingPlayer ||
       shooter.type == npcEvilRight
     ) {
-      addSprite(originX, originY, bullet);
+      addSprite(originX, originY, bullet_right);
     }
   }
 }
@@ -848,7 +878,6 @@ function gameReset() {
 // Moving entity handler
 setInterval(() => {
   if (!player || !getFirst(player)) return;
-
   // Process entity proximity detection (NPC player tracing logic)
   getAll().forEach((entity) => {
     // Loop over all NPCs
@@ -872,15 +901,15 @@ setInterval(() => {
   getAll().forEach((entity) => {
     if (!getFirst(player)) return;
     //Is the entity a bullet?
-    if (entity.type == bullet) {
+    if (isBullet(entity.type)) {
       // Calculate difference to player
-      let xDiff = getFirst(player).x - entity.x;
+      let xDiff = entity.type == bullet_right ? 1 : -1;
       let removedEntity = false;
       //Find all entities in game
       getTile(entity.x, entity.y).forEach((obstacle) => {
         // If the bullet did not hit an NPC (since they are the shooters)
         // Also check if the obstacle is not the same bullet.
-        if (obstacle.type != bullet && !isNPC(obstacle.type)) {
+        if (!isBullet(obstacle.type) && !isNPC(obstacle.type)) {
           entity.remove();
           removedEntity = true;
           // Spawn the heart particle if it was a player,
@@ -927,7 +956,7 @@ setInterval(() => {
     // Shift all entities to the left
     getAll().forEach((entity) => {
       if (
-        entity.type != bullet &&
+        !isBullet(entity.type) &&
         entity.type != fireParticle &&
         entity.type != heart &&
         !isPlayer(entity)
