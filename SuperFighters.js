@@ -15,7 +15,7 @@ const soundDelay = 100;
 const jumpDuration = 280;
 
 // Game data
-let level = 8;
+let level = 0;
 let jumping = false;
 let changingLevels = false;
 let lives = startingLives;
