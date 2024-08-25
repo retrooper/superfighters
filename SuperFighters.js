@@ -52,17 +52,21 @@ const heart = "h";
 const sky = "s";
 const magnet = "0";
 const gun = "1";
+const player_bullet_left = "2";
+const player_bullet_right = "3";
+const leftFacingGunPlayer = "4";
+const rightFacingGunPlayer = "5";
 
 let player = rightFacingPlayer;
-
+ 
 let happySound = tune`
 193.5483870967742: B5~193.5483870967742,
 6000`;
-
+ 
 let explosionSound = tune`
 500: A5^500,
 15500`;
-
+ 
 let victoryMusic = tune`
 333.3333333333333: G5~333.3333333333333,
 333.3333333333333: B5~333.3333333333333,
@@ -88,7 +92,7 @@ let victoryMusic = tune`
 333.3333333333333: F5~333.3333333333333,
 333.3333333333333: D5~333.3333333333333,
 1333.3333333333333`;
-
+ 
 let gameMusic = tune`
 258.62068965517244: G4~258.62068965517244,
 258.62068965517244: B4~258.62068965517244,
@@ -107,9 +111,9 @@ let gameMusic = tune`
 258.62068965517244: G5^258.62068965517244,
 258.62068965517244: D5~258.62068965517244,
 1034.4827586206898`;
-
+ 
 const playback = playTune(gameMusic, Infinity);
-
+ 
 setLegend(
   [
     rightFacingPlayer,
@@ -550,11 +554,51 @@ H....000000...H.`,
 .6..............
 6...............
 ................`,
-  ]
+  ],
+  [
+    player_bullet_left,
+    bitmap`
+................
+................
+................
+................
+................
+................
+................
+......96F6......
+......F666......
+................
+................
+................
+................
+................
+................
+................`,
+  ],
+  [
+    player_bullet_right,
+    bitmap`
+................
+................
+................
+................
+................
+................
+................
+......6F69......
+......666F......
+................
+................
+................
+................
+................
+................
+................`,
+  ],
 );
-
+ 
 setBackground(sky);
-
+ 
 setSolids([
   rightFacingPlayer,
   leftFacingPlayer,
@@ -562,6 +606,8 @@ setSolids([
   rightPunchingPlayer,
   rightFacingMagnetPlayer,
   leftFacingMagnetPlayer,
+  leftFacingGunPlayer,
+  rightFacingGunPlayer,
   npcEvilLeft,
   npcEvilRight,
   npcFacingLeft,
@@ -569,7 +615,7 @@ setSolids([
   box,
   bedrock,
 ]);
-
+ 
 const levels = [
   map`
 ...............
@@ -729,7 +775,9 @@ function isPlayer(type) {
     type == leftPunchingPlayer ||
     type == rightPunchingPlayer ||
     type == rightFacingMagnetPlayer ||
-    type == leftFacingMagnetPlayer
+    type == leftFacingMagnetPlayer || 
+    type == leftFacingGunPlayer ||
+    type == rightFacingGunPlayer
   );
 }
 
@@ -813,7 +861,8 @@ function distance(player, entityX, entityY) {
  * @returns
  */
 function isBullet(type) {
-  return type == bullet_right || type == bullet_left;
+  return type == bullet_right || type == bullet_left
+    || type == player_bullet_right || type == player_bullet_left;
 }
 
 /**
@@ -840,6 +889,31 @@ function shootBullet(shooter, originX, originY) {
       shooter.type == npcEvilRight
     ) {
       addSprite(originX, originY, bullet_right);
+    }
+  }
+}
+
+
+/**
+ * Ellicit a bullet attack from a player.
+ * Shoot a bullet.
+ * @param {*} shooter attacker
+ * @param {*} originX origin x
+ * @param {*} originY origin y
+ */
+function playerShootBullet(shooter, originX, originY) {
+  let currentTime = Date.now();
+  if (currentTime - lastShot > shootDelay) {
+    lastShot = currentTime;
+    //TODO Possibly add shooting functionality for players
+    if (
+      shooter.type == leftFacingGunPlayer
+    ) {
+      addSprite(originX, originY, player_bullet_left);
+    } else if (
+      shooter.type == rightFacingGunPlayer
+    ) {
+      addSprite(originX, originY, player_bullet_right);
     }
   }
 }
@@ -909,6 +983,9 @@ onInput("l", () => {
     player = rightPunchingPlayer;
     attackEntity(player, particleX, particleY);
   }
+  else if (getFirst(player).type == rightFacingGunPlayer && hasGun) {
+     playerShootBullet(getFirst(player), particleX, particleY);
+  }
   var intervalId = setInterval(() => {
     if (
       player &&
@@ -937,6 +1014,9 @@ onInput("j", () => {
     getFirst(player).type = leftPunchingPlayer;
     player = leftPunchingPlayer;
     attackEntity(player, particleX, particleY);
+  }
+  else if (getFirst(player).type == leftFacingGunPlayer && hasGun) {
+     playerShootBullet(getFirst(player), particleX, particleY);
   }
   var intervalId = setInterval(() => {
     if (
@@ -1017,7 +1097,12 @@ onInput("a", () => {
       if (hasMagnet) {
         getFirst(player).type = leftFacingMagnetPlayer;
         player = leftFacingMagnetPlayer;
-      } else {
+      } 
+       else if (hasGun) {
+        getFirst(player).type = leftFacingGunPlayer;
+        player = leftFacingGunPlayer;
+      }
+      else {
         getFirst(player).type = leftFacingPlayer;
         player = leftFacingPlayer;
       }
@@ -1037,7 +1122,12 @@ onInput("d", () => {
       if (hasMagnet) {
         getFirst(player).type = rightFacingMagnetPlayer;
         player = rightFacingMagnetPlayer;
-      } else {
+      }
+      else if (hasGun) {
+        getFirst(player).type = rightFacingGunPlayer;
+        player = rightFacingGunPlayer;
+      }
+      else {
         getFirst(player).type = rightFacingPlayer;
         player = rightFacingPlayer;
       }
@@ -1107,10 +1197,10 @@ setInterval(() => {
     // Calculate distance to the player
     let dist = distance(getFirst(player), entity.x, entity.y);
     //Magnet item pickup detection
-    if (dist == 0.0) {
+     if (dist == 0.0 && (entity.type == magnet || entity.type == gun)) {
       playTune(happySound);
       clearText();
-      if (entity.type == magnet) {
+       if (entity.type == magnet) {
       hasMagnet = true;
       if (getFirst(player).type == rightFacingPlayer) {
         getFirst(player).type = rightFacingMagnetPlayer;
@@ -1119,20 +1209,21 @@ setInterval(() => {
         getFirst(player).type = leftFacingMagnetPlayer;
         player = leftFacingMagnetPlayer;
       }
-      }
-      else if (entity.type == gun) {
-        hasGun = true;
+       }
+       else if (entity.type == gun) {
+           hasGun = true;
+        if (getFirst(player).type == rightFacingPlayer) {
           getFirst(player).type = rightFacingGunPlayer;
         player = rightFacingGunPlayer;
-      } else if (entity.type == leftFacingPlayer) {
-        getFirst(player).type = leftFacingGunPlayer;
-        player = leftFacingGunPlayer;
-      }
-      }
+        }
+        else if (entity.type == leftFacingPlayer) {
+          getFirst(player).type = leftFacingGunPlayer;
+          player = leftFacingGunPlayer;
+        }
+       }
       entity.remove();
       return;
     }
-
     // Loop over all NPCs
     if (!isNPC(entity.type)) return;
     // Once the player comes in close proximity, make them look at the player
@@ -1162,14 +1253,16 @@ setInterval(() => {
     if (!getFirst(player)) return;
     //Is the entity a bullet?
     if (isBullet(entity.type)) {
-      // Calculate difference to player
-      let xDiff = entity.type == bullet_right ? 1 : -1;
+      // Based on the bullet sprite type, check if it's a right-sided bullet or left.
+      let xDiff = (entity.type == bullet_right || entity.type == player_bullet_right) ? 1 : -1;
       let removedEntity = false;
       //Find all entities in game
       getTile(entity.x, entity.y).forEach((obstacle) => {
         // If the bullet did not hit an NPC (since they are the shooters)
         // Also check if the obstacle is not the same bullet.
-        if (!isBullet(obstacle.type) && !isNPC(obstacle.type)) {
+        if (!isBullet(obstacle.type)) {
+          if ((entity.type == player_bullet_right || entity.type == player_bullet_left) &&
+              isNPC(obstacle.type) || (entity.type == bullet_right || entity.type == bullet_left) && !isNPC(obstacle.type)) {
           entity.remove();
           removedEntity = true;
           // Spawn the heart particle if it was a player,
@@ -1181,13 +1274,16 @@ setInterval(() => {
               gameReset();
             }
           }
+          else if (isNPC(obstacle.type)) {
+            obstacle.remove();
+          }
           return;
+          }
         }
       });
       if (removedEntity) return;
-      // Move the bullet toward the player
-      entity.x += xDiff > 0 ? 1 : -1;
-
+      // Move the bullet in the direction contingent on the sprite (acts as metadata)
+        entity.x += xDiff;
       // Destroy bullets meeting the edge
       if (entity.x == width() - 1 || entity.x == 0) {
         entity.remove();
