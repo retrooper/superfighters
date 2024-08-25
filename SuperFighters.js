@@ -1258,9 +1258,11 @@ setInterval(() => {
       let removedEntity = false;
       //Find all entities in game
       getTile(entity.x, entity.y).forEach((obstacle) => {
-        // If the bullet did not hit an NPC (since they are the shooters)
-        // Also check if the obstacle is not the same bullet.
+        // Check if the obstacle is not the same bullet.
         if (!isBullet(obstacle.type)) {
+          //Check if the bullet originates from a player.
+          //If so, then we expect it to hit an NPC.
+          //If not, then we expect it to hit a non-NPC. (including players)
           if ((entity.type == player_bullet_right || entity.type == player_bullet_left) &&
               isNPC(obstacle.type) || (entity.type == bullet_right || entity.type == bullet_left) && !isNPC(obstacle.type)) {
           entity.remove();
@@ -1268,12 +1270,14 @@ setInterval(() => {
           // Spawn the heart particle if it was a player,
           // Spawn the explosion particle otherwise
           spawnParticle(entity.x, entity.y, isPlayer(obstacle.type) ? 1 : 0);
+          //If the bullet hit a player (meaning it originates from an NPC), subtract lives
           if (isPlayer(obstacle.type)) {
             lives--;
             if (lives == 0) {
               gameReset();
             }
           }
+            //If the bullet hit an NPC, it originates from a player.
           else if (isNPC(obstacle.type)) {
             obstacle.remove();
           }
