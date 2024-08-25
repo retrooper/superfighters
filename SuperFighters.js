@@ -15,12 +15,13 @@ const soundDelay = 100;
 const jumpDuration = 280;
 
 // Game data
-let level = 0;
+let level = 8;
 let jumping = false;
 let changingLevels = false;
 let lives = startingLives;
 let gravityDown = true;
 let hasMagnet = false;
+let hasGun = false;
 
 // Internal variables
 let lastParticleSound = Date.now();
@@ -50,6 +51,7 @@ const bullet_right = "M";
 const heart = "h";
 const sky = "s";
 const magnet = "0";
+const gun = "1";
 
 let player = rightFacingPlayer;
 
@@ -186,6 +188,46 @@ setLegend(
 000....00000....
 ......000000....
 .....000..00....
+.....00....00...
+....000...000...`,
+  ],
+   [
+    rightFacingGunPlayer,
+    bitmap`
+...000000.......
+..00C0CC00......
+..00020020......
+..0C00C00.......
+0000CCCC0..0000.
+000000000..0LLL0
+000022222000LLL0
+0000020020CCL00.
+000CC00020CC0...
+000CC0000000....
+.0000000000.....
+....00000.......
+....000000......
+...000...00.....
+...00....00.....
+...000...000....`,
+  ],
+  [
+    leftFacingGunPlayer,
+    bitmap`
+.......000000...
+......00CC0C00..
+......02002000..
+.......00C00C0..
+.0000..0CCCC0000
+0LLL0..000000000
+0LLL000222220000
+.00LCC0200200000
+...0CC02000CC000
+....0000000CC000
+.....0000000000.
+.......00000....
+......000000....
+.....00...000...
 .....00....00...
 ....000...000...`,
   ],
@@ -488,6 +530,26 @@ H....000000...H.`,
 0333333377777770
 .03333337777770.
 ..000000000000..`,
+  ],
+  [
+  gun,
+  bitmap`
+..6.......6.....
+..6.......6.....
+................
+............0...
+...00000000000..
+..0LLLLLLLLLL0..
+.00LLLLLLLLLL0..
+..00LL00000000..
+66.0LL0.0.......
+...0LL00.....66.
+..0LLL0.........
+..00000..6......
+..........6.....
+.6..............
+6...............
+................`,
   ]
 );
 
@@ -598,6 +660,16 @@ BBBB.BB.BB.BB.B
 BBBB.BB.BB.BB.B
 BBBB....BB....B
 BBBBBBBBBBBBBBB
+BBBBBBBBBBBBBBB`,
+  map`
+BBBBBBBBBBBBBBB
+BBBBBBBBBBBBBBB
+...............
+...............
+...............
+...............
+...............
+p.1.........P..
 BBBBBBBBBBBBBBB`,
   map`
 ...............
@@ -999,7 +1071,7 @@ setInterval(() => {
       }
     }
   });
-}, 30);
+}, 60);
 
 function gameReset() {
   // Handle player death
@@ -1035,9 +1107,10 @@ setInterval(() => {
     // Calculate distance to the player
     let dist = distance(getFirst(player), entity.x, entity.y);
     //Magnet item pickup detection
-    if (dist == 0.0 && entity.type == magnet) {
+    if (dist == 0.0) {
       playTune(happySound);
       clearText();
+      if (entity.type == magnet) {
       hasMagnet = true;
       if (getFirst(player).type == rightFacingPlayer) {
         getFirst(player).type = rightFacingMagnetPlayer;
@@ -1046,8 +1119,17 @@ setInterval(() => {
         getFirst(player).type = leftFacingMagnetPlayer;
         player = leftFacingMagnetPlayer;
       }
+      }
+      else if (entity.type == gun) {
+        hasGun = true;
+          getFirst(player).type = rightFacingGunPlayer;
+        player = rightFacingGunPlayer;
+      } else if (entity.type == leftFacingPlayer) {
+        getFirst(player).type = leftFacingGunPlayer;
+        player = leftFacingGunPlayer;
+      }
+      }
       entity.remove();
-
       return;
     }
 
@@ -1198,12 +1280,15 @@ setInterval(() => {
           addText("the", { x: 0, y: 7, color: `4` });
           addText("magnet", { x: 0, y: 8, color: `4` });
         }
+      case 9:
+          hasMagnet = false;
+        gravityDown = true;
+        break;
         break;
     }
 
     if (level == levels.length - 1) {
-      hasMagnet = false;
-      gravityDown = true;
+      hasGun = false;
       addText("You win!", { y: 3, color: `4` });
     }
 
