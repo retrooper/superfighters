@@ -28,6 +28,7 @@ let lastParticleSound = Date.now();
 let lastLeftMovement = Date.now();
 let lastRightMovement = Date.now();
 let lastShot = Date.now();
+let lastPlayerShot = Date.now();
 
 // Sprite data
 const rightFacingPlayer = "p";
@@ -49,13 +50,15 @@ const fireParticle = "f";
 const bullet_left = "m";
 const bullet_right = "M";
 const heart = "h";
-const sky = "s";
 const magnet = "0";
 const gun = "1";
 const player_bullet_left = "2";
 const player_bullet_right = "3";
 const leftFacingGunPlayer = "4";
 const rightFacingGunPlayer = "5";
+const sky_light = "6";
+const sky_dark = "7";
+const sky_black = "8";
 
 let player = rightFacingPlayer;
  
@@ -496,7 +499,7 @@ LLLLL000LLLLLLLL
 H....000000...H.`,
   ],
   [
-    sky,
+    sky_light,
     bitmap`
 2222222222222222
 2222222222222222
@@ -514,6 +517,46 @@ H....000000...H.`,
 2222222222222222
 2222222222222222
 2222222222222222`,
+  ],
+   [
+    sky_dark,
+    bitmap`
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL
+LLLLLLLLLLLLLLLL`,
+  ],
+   [
+    sky_black,
+    bitmap`
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000`,
   ],
   [
     magnet,
@@ -597,7 +640,7 @@ H....000000...H.`,
   ],
 );
  
-setBackground(sky);
+setBackground(sky_light);
  
 setSolids([
   rightFacingPlayer,
@@ -708,15 +751,15 @@ BBBB....BB....B
 BBBBBBBBBBBBBBB
 BBBBBBBBBBBBBBB`,
   map`
-BBBBBBBBBBBBBBB
-BBBBBBBBBBBBBBB
-...............
-...............
-...............
-...............
-...............
-p.1.........P..
-BBBBBBBBBBBBBBB`,
+BBBBBBBBBBBBBB
+BBBBBBBBBBBBBB
+..............
+..............
+..............
+..............
+1.............
+b.p.......K.P.
+BBBBBBBBBBBBBB`,
   map`
 ...............
 ...............
@@ -741,12 +784,12 @@ setPushables({
 addText(gameTitle, gameTitleColor);
 
 /**
- * Is the given type a living entity?
+ * Is the given type a living entity? (meaning gravity applies to it)
  * @param {*} type Entity type
  * @returns true or false
  */
 function isEntity(type) {
-  return isNPC(type) || isPlayer(type);
+  return isNPC(type) || isPlayer(type) || type == gun;
 }
 
 /**
@@ -903,8 +946,8 @@ function shootBullet(shooter, originX, originY) {
  */
 function playerShootBullet(shooter, originX, originY) {
   let currentTime = Date.now();
-  if (currentTime - lastShot > shootDelay) {
-    lastShot = currentTime;
+  if (currentTime - lastPlayerShot > shootDelay) {
+    lastPlayerShot = currentTime;
     //TODO Possibly add shooting functionality for players
     if (
       shooter.type == leftFacingGunPlayer
@@ -1357,33 +1400,47 @@ setInterval(() => {
 
     switch (level) {
       case 1:
+        setBackground(sky_black);
         addText("Not bad...", { y: 3, color: `4` });
         addText("Can you beat this?", { y: 4, color: `3` });
         break;
       case 2:
+        setBackground(sky_light);
         addText("It gets harder...", { y: 4, color: `3` });
         break;
+      case 3:
+        break;
       case 4:
+        setBackground(sky_dark);
         if (!hasMagnet) {
           addText("Pick up", { y: 10, color: `4` });
           addText("the magnet!", { y: 11, color: `4` });
         }
         break;
       case 5:
+        setBackground(sky_black);
         hasMagnet = false;
         gravityDown = true;
         addText("Go down...", { y: 2, color: `3` });
         break;
+      case 6:
+          setBackground(sky_light);
+        break;
       case 8:
         if (!hasMagnet) {
+          addText("Collect", { x: 1, y: 6, color: `4` });
+          addText("the", { x: 1, y: 7, color: `4` });
+          addText("magnet", { x: 1, y: 8, color: `4` });
+        }
+        break;
+      case 9:
+        hasMagnet = false;
+        gravityDown = true;
+        if (!hasGun) {
           addText("Collect", { x: 0, y: 6, color: `4` });
           addText("the", { x: 0, y: 7, color: `4` });
-          addText("magnet", { x: 0, y: 8, color: `4` });
+          addText("gun", { x: 0, y: 8, color: `4` });
         }
-      case 9:
-          hasMagnet = false;
-        gravityDown = true;
-        break;
         break;
     }
 
