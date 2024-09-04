@@ -667,15 +667,11 @@ p......LP......
 ..b..........cb
 ..b..........cb`,
   map`
-BBBBBBBBBBBBBBB
-BBBBBBBBBBBBBBB
-BBBBBBBBBBBBBBB
-BBBBBBBBBBBBBBB
-......BBBBBBBBB
-.........BBBBBB
-.cB.........BBB
-.cB.........BBB
-pcB........P...`,
+.............
+.............
+.............
+.cB..........
+pcB........P.`,
   map`
 ...............
 ...............
@@ -685,71 +681,56 @@ pcB........P...`,
 p.bbbbbbb...LBB`,
   map`
 ..............
+..1...........
 ..............
 ..............
-.........b.b..
-....Bb.b.....b
-...cB........b
-..BB........cB
-.cBBBB.B.B.B.B
-pB.....LL.c..B`,
+..............
+p...........L.`,
   map`
-BBBBBBBBBBBBB
-.............
-.......BBBBBB
-.......BBBBBB
-.......BBBBBB
-.......BBBBBB
-.......BBBBBB
-p.0....BBBBBB
-BBBBBBBBBBBBB`,
+BBBBBBBBB
+.........
+......BBB
+......B..
+......B..
+......B..
+......B..
+p.0...B..
+BBBBBBB..`,
   map`
 p..............
-bbbbbbbbbbbb.bb
-bbbbbbbbbbbb.bb
-bbbbbbbbbbbb.bb
-bbbbbbbbbbbb.bb
-bbbbbbbbbbbb.bb
-bbbbbbbbbbbb...
 bbbbbbbbbbbbbbb
-BBBBBBBBBBBBBBB`,
+...............
+...............
+...............`,
   map`
-.........bbbbbb
-...............
-........bbbbbbb
-...............
-.......bbbbbbbb
-...............
-......bbbbbbbbb
-...............
-.....bbbbbbbbbb
-...............
-....bbbbbbbbbbb
-...............
-...bbbbbbbbbbbb
-p..............
-...............
-BBBBBBBBBBBBBBB`,
+......
+......
+......
+......
+......
+.....b
+......
+....b.
+......
+...b..
+p....B
+....BB
+BBBBBB`,
   map`
-bbbbbbbbbbbbbbb
-bbbbbbbbbbbb.bb
-p...BP.........
-BBB.Bbbb..bb.bb
-bbB.b....Bbb.bb
-bbB...BBBBbbbbb
-bbBBBBbbbbbbbbb
-bbbbbbbbbbbbbbb
-BBBBBBBBBBBBBBB`,
+....B......
+p...BP.....
+BBB.Bbb....
+..B.1......
+..B........
+..BBBBBBBBB`,
   map`
-BBBBBBBBBBBBBBB
-BBBBBBBBBBBBBBB
-p..0.BB....BB..
-BBBB.BB.BB.BB.B
-BBBB.BB.BB.BB.B
-BBBB.BB.BB.BB.B
-BBBB....BB....B
-BBBBBBBBBBBBBBB
-BBBBBBBBBBBBBBB`,
+bbbbbbbbbb
+.....bb...
+p.0..bb...
+bbbb....bb
+...b....bb
+...b....bb
+...bbbbbbb`,
   map`
 BBBBBBBBBBBBBB
 BBBBBBBBBBBBBB
@@ -768,8 +749,8 @@ BBBBBBBBBBBBBB`,
 ...............
 ...............
 ...............
-...............
-p..............`,
+p..............
+bbbbbbbbbbbbbbb`,
 ];
 
 setMap(levels[level]);
@@ -777,7 +758,6 @@ setMap(levels[level]);
 setPushables({
   [rightFacingPlayer]: [],
   [leftFacingPlayer]: [],
-  [box]: [],
 });
 
 // Add game title text as the player loads into the game.
@@ -1410,6 +1390,7 @@ setInterval(() => {
       case 3:
         break;
       case 4:
+        hasGun = false;
         setBackground(sky_dark);
         if (!hasMagnet) {
           addText("Pick up", { y: 10, color: `4` });
@@ -1420,12 +1401,17 @@ setInterval(() => {
         setBackground(sky_black);
         hasMagnet = false;
         gravityDown = true;
-        addText("Go down...", { y: 2, color: `3` });
+        addText("Go right...", { y: 2, color: `3` });
         break;
       case 6:
         setBackground(sky_light);
         break;
+      case 7:
+        setBackground(sky_dark);
+        break;
       case 8:
+        hasGun = false;
+        setBackground(sky_black);
         if (!hasMagnet) {
           addText("Collect", { x: 1, y: 6, color: `4` });
           addText("the", { x: 1, y: 7, color: `4` });
@@ -1433,6 +1419,7 @@ setInterval(() => {
         }
         break;
       case 9:
+        setBackground(sky_light);
         hasMagnet = false;
         gravityDown = true;
         if (!hasGun) {
@@ -1445,6 +1432,7 @@ setInterval(() => {
 
     if (level == levels.length - 1) {
       hasGun = false;
+      setBackground(sky_black);
       addText("You win!", { y: 3, color: `4` });
     }
 
