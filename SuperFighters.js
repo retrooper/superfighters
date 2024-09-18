@@ -1506,7 +1506,7 @@ setInterval(() => {
             //If the bullet hit a player (meaning it originates from an NPC), subtract lives
             if (isPlayer(obstacle.type)) {
               lives--;
-              if (lives == 0) {
+              if (lives <= 0) {
                 gameReset();
               }
             }
