@@ -1,7 +1,8 @@
 /*
 @title: SuperFighters
+@description: SuperFighters is an action-packed platformer where players navigate through challenging parkour jumps, break blocks, and dodge enemy fire. The game requires strategic movement and timely attacks to survive and advance through its levels. The player's goal is to successfully complete all levels and reach the final stage.
 @author: retrooper
-@tags: ['shooter', 'platformer', 'fighting', 'singleplayer']
+@tags: ['action','platformer']
 @addedOn: 2024-08-15
 */
 
@@ -1124,7 +1125,7 @@ onInput("l", () => {
   let particleX = getFirst(player).x + 1;
   let particleY = getFirst(player).y;
   // Are they facing in the right direction (so they can attack in that direction)
-  if (getFirst(player).type === RIGHT_FACING_PLACEHOLDER) {
+  if (getFirst(player).type === LEFT_FACING_PLACEHOLDER || getFirst(player).type == RIGHT_FACING_PLACEHOLDER) {
     // Switch to the punching animation
     getFirst(player).type = rightPunchingPlayer;
     player = rightPunchingPlayer;
@@ -1155,7 +1156,7 @@ onInput("j", () => {
   let particleX = getFirst(player).x - 1;
   let particleY = getFirst(player).y;
   // Are they facing in the left direction? (to be able to punch left)
-  if (getFirst(player).type === LEFT_FACING_PLACEHOLDER) {
+  if (getFirst(player).type === LEFT_FACING_PLACEHOLDER || getFirst(player).type == RIGHT_FACING_PLACEHOLDER) {
     // Switch to the punching animation
     getFirst(player).type = leftPunchingPlayer;
     player = leftPunchingPlayer;
